@@ -2,6 +2,8 @@
 
 A Java tool for creating ZX-calculus diagrams and converting them to LMNtal code.
 
+![example](zx<->lmn.png)
+
 ## Requirements
 
 - Java 21+
