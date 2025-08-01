@@ -1,8 +1,8 @@
 package com.kayo.zx.model;
 
 public enum RuleType {
-  REWRITE("→"),
-  EQUALS("=");
+  REWRITE("→ (one-way)"),
+  EQUALS("= (two-way)");
 
   private final String symbol;
 

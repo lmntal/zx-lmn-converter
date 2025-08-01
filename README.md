@@ -18,7 +18,7 @@ mvn compile exec:java
 ## Usage
 
 **Tools:**
-- Diagram and rule converter
+- Diagram and rule (one-way/two-way) converter
 - Add Z/X Spider, Add normal Edge/Hadamard Edge
 - export LMNtal code to the file
 
