@@ -24,10 +24,10 @@ mvn compile exec:java
 
 **Interactions:**
 - Click: Create spiders
-- Right-click: Delete spider/edge, edit phase, toggle edge type
+- Right-click: Delete spider/edge, toggle spider/edge type, edit phase
 - Drag: Create edges
 - Right-Drag: Move spiders
 
 ## Development Status
 
-This is a work-in-progress research tool. Current features include basic diagram/rule editing and LMNtal code generation. Planned features include import file functionality, support free-edges in rule, and an enhanced user interface.
+This is a work-in-progress research tool. Current features include basic diagram/rule editing and LMNtal code generation. Planned features include import file functionality, support (undefined number of) free-edges in rule.

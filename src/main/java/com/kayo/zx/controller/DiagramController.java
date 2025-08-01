@@ -17,17 +17,14 @@ import com.kayo.zx.model.ZXGraph;
 import com.kayo.zx.view.DrawingPanel;
 
 public class DiagramController extends MouseAdapter {
-  public enum Tool {
-    ADD_Z_SPIDER, ADD_X_SPIDER, ADD_EDGE, ADD_HADAMARD_EDGE
-  }
-
   private final DrawingPanel panel;
-  private Tool currentTool = Tool.ADD_Z_SPIDER;
+  private SpiderType currentSpiderType = SpiderType.Z;
+  private EdgeType currentEdgeType = EdgeType.NORMAL;
   private boolean showHadamardGate = false;
 
   private Spider spiderForRightDrag = null;
   private Spider edgeStartSpider = null;
-  private Point lastMousePoint = null;
+  private Point pressPoint = null;
   private Point currentMousePoint = null;
 
   public DiagramController(DrawingPanel panel) {
@@ -42,7 +39,7 @@ public class DiagramController extends MouseAdapter {
     if (graph == null)
       return;
 
-    lastMousePoint = e.getPoint();
+    pressPoint = e.getPoint();
     Spider targetSpider = graph.findSpiderAt(e.getX(), e.getY(), DrawingPanel.SPIDER_RADIUS);
 
     if (SwingUtilities.isRightMouseButton(e)) {
@@ -50,19 +47,8 @@ public class DiagramController extends MouseAdapter {
         spiderForRightDrag = targetSpider;
       }
     } else if (SwingUtilities.isLeftMouseButton(e)) {
-      switch (currentTool) {
-        case ADD_Z_SPIDER -> {
-          if (targetSpider == null)
-            graph.addSpider(new Spider(e.getX(), e.getY(), SpiderType.Z));
-        }
-        case ADD_X_SPIDER -> {
-          if (targetSpider == null)
-            graph.addSpider(new Spider(e.getX(), e.getY(), SpiderType.X));
-        }
-        case ADD_EDGE, ADD_HADAMARD_EDGE -> {
-          if (targetSpider != null)
-            edgeStartSpider = targetSpider;
-        }
+      if (targetSpider != null) {
+        edgeStartSpider = targetSpider;
       }
     }
     panel.repaint();
@@ -71,11 +57,11 @@ public class DiagramController extends MouseAdapter {
   @Override
   public void mouseDragged(MouseEvent e) {
     currentMousePoint = e.getPoint();
-    if (spiderForRightDrag != null && lastMousePoint != null) {
-      int dx = e.getX() - lastMousePoint.x;
-      int dy = e.getY() - lastMousePoint.y;
+    if (spiderForRightDrag != null && pressPoint != null) {
+      int dx = e.getX() - pressPoint.x;
+      int dy = e.getY() - pressPoint.y;
       spiderForRightDrag.setLocation(spiderForRightDrag.getX() + dx, spiderForRightDrag.getY() + dy);
-      lastMousePoint = e.getPoint();
+      pressPoint = e.getPoint();
     }
     panel.repaint();
   }
@@ -83,22 +69,28 @@ public class DiagramController extends MouseAdapter {
   @Override
   public void mouseReleased(MouseEvent e) {
     ZXGraph graph = panel.getGraph();
-    if (graph == null)
+    if (graph == null || pressPoint == null)
       return;
 
+    boolean isClick = pressPoint.distance(e.getPoint()) < 5;
+
     if (SwingUtilities.isLeftMouseButton(e)) {
-      if ((currentTool == Tool.ADD_EDGE || currentTool == Tool.ADD_HADAMARD_EDGE) && edgeStartSpider != null) {
-        Spider endSpider = graph.findSpiderAt(e.getX(), e.getY(), DrawingPanel.SPIDER_RADIUS);
-        if (endSpider != null && !endSpider.equals(edgeStartSpider)) {
-          EdgeType type = (currentTool == Tool.ADD_HADAMARD_EDGE) ? EdgeType.HADAMARD : EdgeType.NORMAL;
-          graph.addEdge(new Edge(edgeStartSpider, endSpider, type));
+      Spider targetSpider = graph.findSpiderAt(e.getX(), e.getY(), DrawingPanel.SPIDER_RADIUS);
+
+      if (isClick) {
+        if (targetSpider == null) {
+          graph.addSpider(new Spider(e.getX(), e.getY(), currentSpiderType));
+        }
+      } else { // It's a drag
+        if (edgeStartSpider != null && targetSpider != null && !targetSpider.equals(edgeStartSpider)) {
+          graph.addEdge(new Edge(edgeStartSpider, targetSpider, currentEdgeType));
         }
       }
     }
 
     spiderForRightDrag = null;
     edgeStartSpider = null;
-    lastMousePoint = null;
+    pressPoint = null;
     currentMousePoint = null;
     panel.repaint();
   }
@@ -111,7 +103,7 @@ public class DiagramController extends MouseAdapter {
   }
 
   private void handleRightClick(MouseEvent e) {
-    if (e.isConsumed() || (lastMousePoint != null && !e.getPoint().equals(lastMousePoint))) {
+    if (e.isConsumed() || (pressPoint != null && pressPoint.distance(e.getPoint()) >= 5)) {
       return;
     }
 
@@ -134,6 +126,12 @@ public class DiagramController extends MouseAdapter {
     JPopupMenu menu = new JPopupMenu();
     ZXGraph graph = panel.getGraph();
 
+    JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
+    toggleTypeItem.addActionListener(ev -> {
+      spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
+      panel.repaint();
+    });
+
     JMenuItem phaseItem = new JMenuItem("Edit Phase");
     phaseItem.addActionListener(ev -> {
       String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", spider.getPhase());
@@ -151,6 +149,7 @@ public class DiagramController extends MouseAdapter {
       }
     });
 
+    menu.add(toggleTypeItem);
     menu.add(phaseItem);
     menu.add(deleteItem);
     menu.show(panel, p.x, p.y);
@@ -177,8 +176,12 @@ public class DiagramController extends MouseAdapter {
     menu.show(panel, p.x, p.y);
   }
 
-  public void setTool(Tool tool) {
-    this.currentTool = tool;
+  public void setSpiderType(SpiderType type) {
+    this.currentSpiderType = type;
+  }
+
+  public void setEdgeType(EdgeType type) {
+    this.currentEdgeType = type;
   }
 
   public void setShowHadamardGate(boolean show) {

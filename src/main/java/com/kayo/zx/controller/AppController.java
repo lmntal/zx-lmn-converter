@@ -173,41 +173,37 @@ public class AppController {
     }
   }
 
-  public void deleteCurrentSelection() {
-    NamedGraph selectedGraph = sidebarPanel.getGraphList().getSelectedValue();
-    if (selectedGraph != null) {
-      deleteGraph(selectedGraph);
+  public void deleteGraph(NamedGraph graph) {
+    if (graph == null)
       return;
-    }
-
-    ZXRule selectedRule = sidebarPanel.getRuleList().getSelectedValue();
-    if (selectedRule != null) {
-      deleteRule(selectedRule);
-    }
-  }
-
-  private void deleteGraph(NamedGraph graph) {
     int choice = JOptionPane.showConfirmDialog(mainFrame, "Delete graph '" + graph.getName() + "'?", "Confirm",
         JOptionPane.YES_NO_OPTION);
     if (choice == JOptionPane.YES_OPTION) {
+      int selectedIdx = graphListModel.indexOf(graph);
       graphs.remove(graph);
       graphListModel.removeElement(graph);
+
       if (!graphs.isEmpty()) {
-        sidebarPanel.getGraphList().setSelectedIndex(0);
+        int newSelection = Math.max(0, selectedIdx - 1);
+        sidebarPanel.getGraphList().setSelectedIndex(newSelection);
       } else {
         createNewGraph();
       }
     }
   }
 
-  private void deleteRule(ZXRule rule) {
+  public void deleteRule(ZXRule rule) {
+    if (rule == null)
+      return;
     int choice = JOptionPane.showConfirmDialog(mainFrame, "Delete rule '" + rule.getName() + "'?", "Confirm",
         JOptionPane.YES_NO_OPTION);
     if (choice == JOptionPane.YES_OPTION) {
+      int selectedIdx = ruleListModel.indexOf(rule);
       rules.remove(rule);
       ruleListModel.removeElement(rule);
       if (!rules.isEmpty()) {
-        sidebarPanel.getRuleList().setSelectedIndex(0);
+        int newSelection = Math.max(0, selectedIdx - 1);
+        sidebarPanel.getRuleList().setSelectedIndex(newSelection);
       } else {
         createNewRule();
       }
