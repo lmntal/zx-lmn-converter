@@ -9,10 +9,9 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 import com.kayo.zx.controller.DiagramController;
@@ -32,53 +31,36 @@ public class DrawingPanel extends JPanel {
       10.0f, new float[] { 5.0f }, 0.0f);
   private static final Color HADAMARD_EDGE_COLOR = Color.BLUE;
 
-  private final ZXGraph graph;
+  private ZXGraph graph;
   private DiagramController controller;
 
-  public DrawingPanel(ZXGraph graph) {
-    this.graph = graph;
+  public DrawingPanel() {
+    this.graph = new ZXGraph(); // Start with an empty, non-null graph
     setBackground(Color.WHITE);
-    MouseAdapter adapter = new MouseAdapter() {
-      @Override
-      public void mousePressed(MouseEvent e) {
-        if (controller != null)
-          controller.handleMousePress(e);
-      }
-
-      @Override
-      public void mouseReleased(MouseEvent e) {
-        if (controller != null)
-          controller.handleMouseRelease(e);
-      }
-
-      @Override
-      public void mouseDragged(MouseEvent e) {
-        if (controller != null)
-          controller.handleMouseDrag(e);
-      }
-
-      @Override
-      public void mouseClicked(MouseEvent e) {
-        if (controller != null)
-          controller.handleMouseClick(e);
-      }
-    };
-    addMouseListener(adapter);
-    addMouseMotionListener(adapter);
+    setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
   }
 
   public void setController(DiagramController controller) {
     this.controller = controller;
   }
 
+  public ZXGraph getGraph() {
+    return graph;
+  }
+
+  public void setGraph(ZXGraph graph) {
+    this.graph = graph;
+  }
+
   @Override
   protected void paintComponent(Graphics g) {
     super.paintComponent(g);
+    if (graph == null)
+      return;
     Graphics2D g2d = (Graphics2D) g;
     g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
     graph.getEdges().forEach(edge -> drawEdge(g2d, edge));
-
     if (controller != null && controller.getEdgeStartSpider() != null && controller.getCurrentMousePoint() != null) {
       Spider start = controller.getEdgeStartSpider();
       Point end = controller.getCurrentMousePoint();
@@ -86,7 +68,6 @@ public class DrawingPanel extends JPanel {
       g2d.setStroke(HADAMARD_EDGE_STROKE);
       g2d.drawLine(start.getX(), start.getY(), end.x, end.y);
     }
-
     graph.getSpiders().forEach(spider -> drawSpider(g2d, spider));
   }
 
@@ -99,7 +80,6 @@ public class DrawingPanel extends JPanel {
     g2d.setColor(Color.BLACK);
     g2d.setStroke(NORMAL_EDGE_STROKE);
     g2d.draw(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
-
     if (!"0".equals(spider.getPhase()) && spider.getPhase() != null && !spider.getPhase().isEmpty()) {
       g2d.setColor(Color.BLACK);
       g2d.setFont(new Font("SansSerif", Font.BOLD, 12));
@@ -112,8 +92,7 @@ public class DrawingPanel extends JPanel {
   private void drawEdge(Graphics2D g2d, Edge edge) {
     Point p1 = edge.getSource().getLocation();
     Point p2 = edge.getTarget().getLocation();
-
-    if (edge.getType() == EdgeType.HADAMARD && controller.isShowHadamardGate()) {
+    if (edge.getType() == EdgeType.HADAMARD && controller != null && controller.isShowHadamardGate()) {
       g2d.setColor(Color.BLACK);
       g2d.setStroke(NORMAL_EDGE_STROKE);
       g2d.drawLine(p1.x, p1.y, p2.x, p2.y);

@@ -12,6 +12,12 @@ public class Edge extends GraphElement {
     this.type = type;
   }
 
+  public Edge(Edge other, Spider newSource, Spider newTarget) {
+    this.source = newSource;
+    this.target = newTarget;
+    this.type = other.type;
+  }
+
   public Spider getSource() {
     return source;
   }

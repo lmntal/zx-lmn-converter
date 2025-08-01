@@ -1,48 +1,44 @@
 package com.kayo.zx.view;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Font;
+import java.awt.FlowLayout;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JScrollPane;
+import javax.swing.JPanel;
 import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
 
-import com.kayo.zx.controller.DiagramController;
-import com.kayo.zx.model.ZXGraph;
+import com.kayo.zx.controller.AppController;
 
 public class MainFrame extends JFrame {
-  private final DrawingPanel drawingPanel;
-  private final JTextArea lmntalOutput;
-  private final DiagramController controller;
-
   public MainFrame() {
     setTitle("ZX <-> LMNtal Converter");
     setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    setSize(1200, 800);
+    setSize(1600, 1000);
     setLocationRelativeTo(null);
+  }
 
-    ZXGraph graph = new ZXGraph();
-    this.drawingPanel = new DrawingPanel(graph);
-    this.controller = new DiagramController(graph, drawingPanel);
-    this.drawingPanel.setController(controller);
+  public void setupLayout(AppController controller) {
+    setLayout(new BorderLayout(5, 5));
 
-    AppToolbar toolbar = new AppToolbar(controller);
+    JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+    JSplitPane leftSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
-    lmntalOutput = new JTextArea("// LMNtal Output will appear here\n");
-    lmntalOutput.setEditable(false);
-    lmntalOutput.setFont(new Font("Monospaced", Font.PLAIN, 14));
-    JScrollPane outputScrollPane = new JScrollPane(lmntalOutput);
-    outputScrollPane.setPreferredSize(new Dimension(300, 800));
+    leftSplit.setLeftComponent(controller.getSidebarPanel());
+    leftSplit.setRightComponent(controller.getEditorPanel());
+    leftSplit.setDividerLocation(220);
 
-    setLayout(new BorderLayout());
-    add(toolbar, BorderLayout.NORTH);
+    mainSplit.setLeftComponent(leftSplit);
+    mainSplit.setRightComponent(controller.getOutputPanel());
+    mainSplit.setDividerLocation(1200);
 
-    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, drawingPanel, outputScrollPane);
-    splitPane.setDividerLocation(850);
-    add(splitPane, BorderLayout.CENTER);
+    add(controller.getToolbar(), BorderLayout.NORTH);
+    add(mainSplit, BorderLayout.CENTER);
 
-    controller.setLmntalOutputArea(lmntalOutput);
+    JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+    JButton exportButton = new JButton("ファイルにエクスポート (.lmn)");
+    exportButton.addActionListener(e -> controller.exportToFile());
+    bottomPanel.add(exportButton);
+    add(bottomPanel, BorderLayout.SOUTH);
   }
 }

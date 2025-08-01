@@ -1,6 +1,6 @@
 # ZX <-> LMNtal Converter
 
-A Java tool for creating ZX-calculus diagrams and converting them to LMNtal code.
+A Java tool for creating ZX-calculus diagrams and rules and converting them to LMNtal code.
 
 ![example](zx<->lmn.png)
 
@@ -18,13 +18,16 @@ mvn compile exec:java
 ## Usage
 
 **Tools:**
-- Select, Add Z/X Spider, Add Edge/Hadamard Edge
+- Diagram and rule converter
+- Add Z/X Spider, Add normal Edge/Hadamard Edge
+- export LMNtal code to the file
 
 **Interactions:**
-- Double-click spider: Edit phase
-- Right-click: Delete or toggle edge type
-- Drag: Move spiders (Select mode) or create edges
+- Click: Create spiders
+- Right-click: Delete spider/edge, edit phase, toggle edge type
+- Drag: Create edges
+- Right-Drag: Move spiders
 
 ## Development Status
 
-This is a work-in-progress research tool. Current features include basic diagram editing and LMNtal code generation. Planned features include a rule system for ZX-calculus transformations, import/export functionality, and an enhanced user interface.
+This is a work-in-progress research tool. Current features include basic diagram/rule editing and LMNtal code generation. Planned features include import file functionality, support free-edges in rule, and an enhanced user interface.

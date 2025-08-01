@@ -14,6 +14,13 @@ public class Spider extends GraphElement {
     this.type = type;
   }
 
+  public Spider(Spider other) {
+    this.x = other.x;
+    this.y = other.y;
+    this.type = other.type;
+    this.phase = other.phase;
+  }
+
   public int getX() {
     return x;
   }

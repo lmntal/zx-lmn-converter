@@ -1,63 +1,67 @@
 package com.kayo.zx.view;
 
-import java.awt.event.ActionListener;
-
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JToggleButton;
-import javax.swing.JToolBar;
-
 import com.kayo.zx.controller.DiagramController;
+import com.kayo.zx.controller.DiagramController.Tool;
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AppToolbar extends JToolBar {
-  public AppToolbar(DiagramController controller) {
+  private final List<DiagramController> controllers = new ArrayList<>();
+
+  public AppToolbar() {
     setFloatable(false);
 
     ButtonGroup toolGroup = new ButtonGroup();
-    JToggleButton selectBtn = new JToggleButton("Select");
-    selectBtn.setActionCommand(DiagramController.Tool.SELECT.name());
-    selectBtn.setSelected(true);
-    JToggleButton zSpiderBtn = new JToggleButton("Add Z");
-    zSpiderBtn.setActionCommand(DiagramController.Tool.ADD_Z_SPIDER.name());
-    JToggleButton xSpiderBtn = new JToggleButton("Add X");
-    xSpiderBtn.setActionCommand(DiagramController.Tool.ADD_X_SPIDER.name());
-    JToggleButton edgeBtn = new JToggleButton("Add Edge");
-    edgeBtn.setActionCommand(DiagramController.Tool.ADD_EDGE.name());
-    JToggleButton hEdgeBtn = new JToggleButton("Add Hadamard Edge");
-    hEdgeBtn.setActionCommand(DiagramController.Tool.ADD_HADAMARD_EDGE.name());
+    JToggleButton zSpiderBtn = new JToggleButton("Add Z Spider");
+    zSpiderBtn.setActionCommand(Tool.ADD_Z_SPIDER.name());
+    zSpiderBtn.setSelected(true);
 
-    toolGroup.add(selectBtn);
+    JToggleButton xSpiderBtn = new JToggleButton("Add X Spider");
+    xSpiderBtn.setActionCommand(Tool.ADD_X_SPIDER.name());
+
+    JToggleButton edgeBtn = new JToggleButton("Add Edge");
+    edgeBtn.setActionCommand(Tool.ADD_EDGE.name());
+
+    JToggleButton hEdgeBtn = new JToggleButton("Add H Edge");
+    hEdgeBtn.setActionCommand(Tool.ADD_HADAMARD_EDGE.name());
+
     toolGroup.add(zSpiderBtn);
     toolGroup.add(xSpiderBtn);
     toolGroup.add(edgeBtn);
     toolGroup.add(hEdgeBtn);
 
-    ActionListener toolListener = e -> controller.setTool(DiagramController.Tool.valueOf(e.getActionCommand()));
-    selectBtn.addActionListener(toolListener);
-    zSpiderBtn.addActionListener(toolListener);
-    xSpiderBtn.addActionListener(toolListener);
-    edgeBtn.addActionListener(toolListener);
-    hEdgeBtn.addActionListener(toolListener);
+    zSpiderBtn.addActionListener(e -> setToolForAll(Tool.valueOf(e.getActionCommand())));
+    xSpiderBtn.addActionListener(e -> setToolForAll(Tool.valueOf(e.getActionCommand())));
+    edgeBtn.addActionListener(e -> setToolForAll(Tool.valueOf(e.getActionCommand())));
+    hEdgeBtn.addActionListener(e -> setToolForAll(Tool.valueOf(e.getActionCommand())));
 
-    add(selectBtn);
     add(zSpiderBtn);
     add(xSpiderBtn);
     add(edgeBtn);
     add(hEdgeBtn);
     addSeparator();
 
-    JCheckBox showHadamardGateBox = new JCheckBox("Show Hadamard Gate");
-    showHadamardGateBox.addActionListener(e -> controller.setShowHadamardGate(showHadamardGateBox.isSelected()));
+    JCheckBox showHadamardGateBox = new JCheckBox("Show H Gate");
+    showHadamardGateBox.addActionListener(e -> setShowHadamardGateForAll(showHadamardGateBox.isSelected()));
     add(showHadamardGateBox);
-    addSeparator();
+  }
 
-    JButton convertBtn = new JButton("Convert to LMNtal");
-    convertBtn.addActionListener(e -> controller.convertToLMNtal());
-    add(convertBtn);
+  public void setControllers(DiagramController... diagramControllers) {
+    controllers.clear();
+    controllers.addAll(List.of(diagramControllers));
+  }
 
-    JButton clearBtn = new JButton("Clear Graph");
-    clearBtn.addActionListener(e -> controller.clearGraph());
-    add(clearBtn);
+  private void setToolForAll(Tool tool) {
+    for (DiagramController controller : controllers) {
+      controller.setTool(tool);
+    }
+  }
+
+  private void setShowHadamardGateForAll(boolean show) {
+    for (DiagramController controller : controllers) {
+      controller.setShowHadamardGate(show);
+    }
+    SwingUtilities.getWindowAncestor(this).repaint();
   }
 }
