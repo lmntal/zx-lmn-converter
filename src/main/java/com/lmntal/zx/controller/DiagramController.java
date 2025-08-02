@@ -1,4 +1,4 @@
-package com.kayo.zx.controller;
+package com.lmntal.zx.controller;
 
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
@@ -15,12 +15,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
-import com.kayo.zx.model.Edge;
-import com.kayo.zx.model.EdgeType;
-import com.kayo.zx.model.Spider;
-import com.kayo.zx.model.SpiderType;
-import com.kayo.zx.model.ZXGraph;
-import com.kayo.zx.view.DrawingPanel;
+import com.lmntal.zx.model.Edge;
+import com.lmntal.zx.model.EdgeType;
+import com.lmntal.zx.model.Spider;
+import com.lmntal.zx.model.SpiderType;
+import com.lmntal.zx.model.ZXGraph;
+import com.lmntal.zx.view.DrawingPanel;
 
 public class DiagramController extends MouseAdapter {
   private final DrawingPanel panel;

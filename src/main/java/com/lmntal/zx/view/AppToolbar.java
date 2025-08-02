@@ -1,13 +1,19 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
-import com.kayo.zx.controller.DiagramController;
-import com.kayo.zx.model.EdgeType;
-import com.kayo.zx.model.SpiderType;
-
-import javax.swing.*;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JToolBar;
+import javax.swing.SwingUtilities;
+
+import com.lmntal.zx.controller.DiagramController;
+import com.lmntal.zx.model.EdgeType;
+import com.lmntal.zx.model.SpiderType;
 
 public class AppToolbar extends JToolBar {
   private final List<DiagramController> controllers = new ArrayList<>();

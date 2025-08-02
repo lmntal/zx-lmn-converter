@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
@@ -17,9 +17,9 @@ import javax.swing.JSplitPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 
-import com.kayo.zx.controller.AppController;
-import com.kayo.zx.model.NamedGraph;
-import com.kayo.zx.model.ZXRule;
+import com.lmntal.zx.controller.AppController;
+import com.lmntal.zx.model.NamedGraph;
+import com.lmntal.zx.model.ZXRule;
 
 public class SidebarPanel extends JPanel {
   private final JList<NamedGraph> graphList;

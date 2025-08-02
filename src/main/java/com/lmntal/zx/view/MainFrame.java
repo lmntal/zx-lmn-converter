@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -8,7 +8,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
-import com.kayo.zx.controller.AppController;
+import com.lmntal.zx.controller.AppController;
 
 public class MainFrame extends JFrame {
   public MainFrame() {

@@ -1,4 +1,4 @@
-package com.kayo.zx.model;
+package com.lmntal.zx.model;
 
 import java.awt.geom.Line2D;
 import java.util.ArrayList;

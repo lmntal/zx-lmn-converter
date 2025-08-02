@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -17,12 +17,12 @@ import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
-import com.kayo.zx.controller.DiagramController;
-import com.kayo.zx.model.Edge;
-import com.kayo.zx.model.EdgeType;
-import com.kayo.zx.model.Spider;
-import com.kayo.zx.model.SpiderType;
-import com.kayo.zx.model.ZXGraph;
+import com.lmntal.zx.controller.DiagramController;
+import com.lmntal.zx.model.Edge;
+import com.lmntal.zx.model.EdgeType;
+import com.lmntal.zx.model.Spider;
+import com.lmntal.zx.model.SpiderType;
+import com.lmntal.zx.model.ZXGraph;
 
 public class DrawingPanel extends JPanel {
   public static final int SPIDER_RADIUS = 15;

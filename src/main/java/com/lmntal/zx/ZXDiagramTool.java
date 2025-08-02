@@ -1,8 +1,8 @@
-package com.kayo.zx;
+package com.lmntal.zx;
 
 import javax.swing.SwingUtilities;
 
-import com.kayo.zx.controller.AppController;
+import com.lmntal.zx.controller.AppController;
 
 public class ZXDiagramTool {
   public static void main(String[] args) {

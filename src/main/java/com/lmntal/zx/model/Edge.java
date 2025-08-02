@@ -1,4 +1,4 @@
-package com.kayo.zx.model;
+package com.lmntal.zx.model;
 
 public class Edge extends GraphElement {
   private final Spider source;

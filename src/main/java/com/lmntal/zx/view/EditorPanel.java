@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 
-import com.kayo.zx.controller.AppController;
+import com.lmntal.zx.controller.AppController;
 
 public class EditorPanel extends JPanel {
   private final DrawingPanel graphEditorPanel;

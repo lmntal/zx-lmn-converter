@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BorderLayout;
 import java.awt.Font;

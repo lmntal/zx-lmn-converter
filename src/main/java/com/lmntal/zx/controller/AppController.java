@@ -1,4 +1,4 @@
-package com.kayo.zx.controller;
+package com.lmntal.zx.controller;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -15,17 +15,17 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.kayo.zx.model.NamedGraph;
-import com.kayo.zx.model.RuleType;
-import com.kayo.zx.model.Spider;
-import com.kayo.zx.model.SpiderType;
-import com.kayo.zx.model.ZXGraph;
-import com.kayo.zx.model.ZXRule;
-import com.kayo.zx.view.AppToolbar;
-import com.kayo.zx.view.EditorPanel;
-import com.kayo.zx.view.MainFrame;
-import com.kayo.zx.view.OutputPanel;
-import com.kayo.zx.view.SidebarPanel;
+import com.lmntal.zx.model.NamedGraph;
+import com.lmntal.zx.model.RuleType;
+import com.lmntal.zx.model.Spider;
+import com.lmntal.zx.model.SpiderType;
+import com.lmntal.zx.model.ZXGraph;
+import com.lmntal.zx.model.ZXRule;
+import com.lmntal.zx.view.AppToolbar;
+import com.lmntal.zx.view.EditorPanel;
+import com.lmntal.zx.view.MainFrame;
+import com.lmntal.zx.view.OutputPanel;
+import com.lmntal.zx.view.SidebarPanel;
 
 public class AppController {
   private final List<NamedGraph> graphs = new ArrayList<>();
@@ -400,17 +400,18 @@ public class AppController {
       try (FileWriter writer = new FileWriter(fileToSave)) {
         writer.write(exportContent.toString());
 
-        String successMessage = "File exported:\n" + fileToSave.getAbsolutePath();
+        String successMessage = "File exported successfully:\n" + fileToSave.getAbsolutePath();
         if (errorMessages.length() > 0) {
           JOptionPane.showMessageDialog(mainFrame,
               successMessage + "\n\nHowever, some rules could not be exported:\n" + errorMessages.toString(),
               "Export Complete with Warnings", JOptionPane.WARNING_MESSAGE);
         } else {
-          JOptionPane.showMessageDialog(mainFrame, successMessage);
+          JOptionPane.showMessageDialog(mainFrame, successMessage, "Export Successful",
+              JOptionPane.INFORMATION_MESSAGE);
         }
 
       } catch (IOException e) {
-        JOptionPane.showMessageDialog(mainFrame, "Error occurred during export: " + e.getMessage(), "Error",
+        JOptionPane.showMessageDialog(mainFrame, "Error occurred during export: " + e.getMessage(), "Export Error",
             JOptionPane.ERROR_MESSAGE);
       }
     }

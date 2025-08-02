@@ -1,4 +1,4 @@
-package com.kayo.zx.view;
+package com.lmntal.zx.view;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -11,10 +11,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
-import com.kayo.zx.controller.AppController;
-import com.kayo.zx.controller.DiagramController;
-import com.kayo.zx.model.RuleType;
-import com.kayo.zx.model.ZXRule;
+import com.lmntal.zx.controller.AppController;
+import com.lmntal.zx.controller.DiagramController;
+import com.lmntal.zx.model.RuleType;
+import com.lmntal.zx.model.ZXRule;
 
 public class RuleEditorPanel extends JPanel {
   private final DrawingPanel lhsPanel;
