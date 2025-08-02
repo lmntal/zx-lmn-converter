@@ -18,6 +18,7 @@ import com.kayo.zx.view.DrawingPanel;
 
 public class DiagramController extends MouseAdapter {
   private final DrawingPanel panel;
+  private final boolean isRuleEditorContext;
   private SpiderType currentSpiderType = SpiderType.Z;
   private EdgeType currentEdgeType = EdgeType.NORMAL;
   private boolean showHadamardGate = false;
@@ -27,8 +28,9 @@ public class DiagramController extends MouseAdapter {
   private Point pressPoint = null;
   private Point currentMousePoint = null;
 
-  public DiagramController(DrawingPanel panel) {
+  public DiagramController(DrawingPanel panel, boolean isRuleEditorContext) {
     this.panel = panel;
+    this.isRuleEditorContext = isRuleEditorContext;
     panel.addMouseListener(this);
     panel.addMouseMotionListener(this);
   }
@@ -79,7 +81,16 @@ public class DiagramController extends MouseAdapter {
 
       if (isClick) {
         if (targetSpider == null) {
-          graph.addSpider(new Spider(e.getX(), e.getY(), currentSpiderType));
+          if (currentSpiderType == SpiderType.BOUNDARY) {
+            if (!isRuleEditorContext) {
+              JOptionPane.showMessageDialog(panel, "Boundary nodes can only be added in the rule editor.", "Info",
+                  JOptionPane.INFORMATION_MESSAGE);
+            } else {
+              addBoundarySpider(e.getX(), e.getY());
+            }
+          } else {
+            graph.addSpider(new Spider(e.getX(), e.getY(), currentSpiderType));
+          }
         }
       } else { // It's a drag
         if (edgeStartSpider != null && targetSpider != null && !targetSpider.equals(edgeStartSpider)) {
@@ -93,6 +104,24 @@ public class DiagramController extends MouseAdapter {
     pressPoint = null;
     currentMousePoint = null;
     panel.repaint();
+  }
+
+  private void addBoundarySpider(int x, int y) {
+    String label = JOptionPane.showInputDialog(panel, "Enter label for boundary node:");
+    if (label != null && !label.trim().isEmpty()) {
+      boolean isUnique = panel.getGraph().getSpiders().stream()
+          .filter(s -> s.getType() == SpiderType.BOUNDARY)
+          .noneMatch(s -> label.equals(s.getLabel()));
+
+      if (isUnique) {
+        Spider boundarySpider = new Spider(x, y, SpiderType.BOUNDARY);
+        boundarySpider.setLabel(label);
+        panel.getGraph().addSpider(boundarySpider);
+      } else {
+        JOptionPane.showMessageDialog(panel, "Boundary node label must be unique within the graph.", "Error",
+            JOptionPane.ERROR_MESSAGE);
+      }
+    }
   }
 
   @Override
@@ -126,20 +155,41 @@ public class DiagramController extends MouseAdapter {
     JPopupMenu menu = new JPopupMenu();
     ZXGraph graph = panel.getGraph();
 
-    JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
-    toggleTypeItem.addActionListener(ev -> {
-      spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
-      panel.repaint();
-    });
-
-    JMenuItem phaseItem = new JMenuItem("Edit Phase");
-    phaseItem.addActionListener(ev -> {
-      String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", spider.getPhase());
-      if (newPhase != null) {
-        spider.setPhase(newPhase);
+    if (spider.getType() == SpiderType.BOUNDARY) {
+      JMenuItem editLabelItem = new JMenuItem("Edit Label");
+      editLabelItem.addActionListener(ev -> {
+        String newLabel = JOptionPane.showInputDialog(panel, "Enter new label:", spider.getLabel());
+        if (newLabel != null && !newLabel.trim().isEmpty()) {
+          boolean isUnique = panel.getGraph().getSpiders().stream()
+              .filter(s -> s.getType() == SpiderType.BOUNDARY && !s.equals(spider))
+              .noneMatch(s -> newLabel.equals(s.getLabel()));
+          if (isUnique) {
+            spider.setLabel(newLabel);
+            panel.repaint();
+          } else {
+            JOptionPane.showMessageDialog(panel, "Label must be unique.", "Error", JOptionPane.ERROR_MESSAGE);
+          }
+        }
+      });
+      menu.add(editLabelItem);
+    } else {
+      JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
+      toggleTypeItem.addActionListener(ev -> {
+        spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
         panel.repaint();
-      }
-    });
+      });
+
+      JMenuItem phaseItem = new JMenuItem("Edit Phase");
+      phaseItem.addActionListener(ev -> {
+        String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", spider.getPhase());
+        if (newPhase != null) {
+          spider.setPhase(newPhase);
+          panel.repaint();
+        }
+      });
+      menu.add(toggleTypeItem);
+      menu.add(phaseItem);
+    }
 
     JMenuItem deleteItem = new JMenuItem("Delete Spider");
     deleteItem.addActionListener(ev -> {
@@ -149,8 +199,6 @@ public class DiagramController extends MouseAdapter {
       }
     });
 
-    menu.add(toggleTypeItem);
-    menu.add(phaseItem);
     menu.add(deleteItem);
     menu.show(panel, p.x, p.y);
   }

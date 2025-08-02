@@ -6,6 +6,7 @@ public class Spider extends GraphElement {
   private int x, y;
   private SpiderType type;
   private String phase = "0";
+  private String label; // For BOUNDARY type
 
   public Spider(int x, int y, SpiderType type) {
     super();
@@ -19,6 +20,7 @@ public class Spider extends GraphElement {
     this.y = other.y;
     this.type = other.type;
     this.phase = other.phase;
+    this.label = other.label;
   }
 
   public int getX() {
@@ -60,5 +62,13 @@ public class Spider extends GraphElement {
 
   public void setPhase(String phase) {
     this.phase = phase;
+  }
+
+  public String getLabel() {
+    return label;
+  }
+
+  public void setLabel(String label) {
+    this.label = label;
   }
 }

@@ -35,7 +35,7 @@ public class RuleEditorPanel extends JPanel {
       }
     });
 
-    JButton convertButton = new JButton("Convert Rule");
+    JButton convertButton = new JButton("Convert/Save Rule");
     convertButton.addActionListener(e -> controller.convertAndSaveCurrentRule());
 
     JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));

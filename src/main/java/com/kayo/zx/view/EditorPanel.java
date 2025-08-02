@@ -23,7 +23,7 @@ public class EditorPanel extends JPanel {
 
     JPanel graphEditorContainer = new JPanel(new BorderLayout());
     graphEditorContainer.setBorder(BorderFactory.createTitledBorder("Graph Editor"));
-    JButton convertGraphButton = new JButton("Convert Graph");
+    JButton convertGraphButton = new JButton("Convert/Save Graph");
     convertGraphButton.addActionListener(e -> controller.convertAndSaveCurrentGraph());
     JPanel graphButtonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
     graphButtonPanel.add(convertGraphButton);

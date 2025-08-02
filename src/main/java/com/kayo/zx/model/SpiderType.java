@@ -1,5 +1,5 @@
 package com.kayo.zx.model;
 
 public enum SpiderType {
-  Z, X
+  Z, X, BOUNDARY
 }

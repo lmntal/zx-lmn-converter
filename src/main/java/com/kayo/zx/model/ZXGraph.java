@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class ZXGraph {
   protected final List<Spider> spiders = new ArrayList<>();
@@ -96,6 +97,23 @@ public class ZXGraph {
     if (this.spiders.size() != other.spiders.size() || this.edges.size() != other.edges.size()) {
       return false;
     }
+
+    // This is a simplification. A more robust check would involve graph
+    // isomorphism.
+    // For now, we rely on the LMNtal string representation, which is sensitive to
+    // ordering.
+    // A better check for boundary spiders is needed.
+    Map<String, Long> thisBoundaryCounts = this.spiders.stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY && s.getLabel() != null)
+        .collect(Collectors.groupingBy(Spider::getLabel, Collectors.counting()));
+    Map<String, Long> otherBoundaryCounts = other.spiders.stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY && s.getLabel() != null)
+        .collect(Collectors.groupingBy(Spider::getLabel, Collectors.counting()));
+
+    if (!thisBoundaryCounts.equals(otherBoundaryCounts)) {
+      return false;
+    }
+
     return this.toLMNtal().equals(other.toLMNtal());
   }
 
@@ -104,41 +122,62 @@ public class ZXGraph {
       return "";
 
     ArrayList<String> components = new ArrayList<>();
-
-    Map<Edge, String> edgeToLinkName = new HashMap<>();
-    AtomicInteger linkCounter = new AtomicInteger(0);
-    for (Edge edge : this.edges) {
-      edgeToLinkName.put(edge, "+L" + linkCounter.incrementAndGet());
-    }
-
     Map<Spider, List<String>> spiderToLinks = new HashMap<>();
     for (Spider spider : this.spiders) {
-      spiderToLinks.put(spider, new ArrayList<>());
+      if (spider.getType() != SpiderType.BOUNDARY) {
+        spiderToLinks.put(spider, new ArrayList<>());
+      }
     }
 
+    AtomicInteger linkCounter = new AtomicInteger(0);
+
     for (Edge edge : this.edges) {
-      String linkName = edgeToLinkName.get(edge);
-      if (edge.getType() == EdgeType.HADAMARD) {
-        String link1 = linkName + "a";
-        String link2 = linkName + "b";
-        spiderToLinks.get(edge.getSource()).add(link1);
-        spiderToLinks.get(edge.getTarget()).add(link2);
-        components.add(String.format("h{e^i(180), %s, %s}", link1, link2));
-      } else {
-        spiderToLinks.get(edge.getSource()).add(linkName);
-        spiderToLinks.get(edge.getTarget()).add(linkName);
+      Spider source = edge.getSource();
+      Spider target = edge.getTarget();
+      boolean sourceIsBoundary = source.getType() == SpiderType.BOUNDARY;
+      boolean targetIsBoundary = target.getType() == SpiderType.BOUNDARY;
+
+      if (sourceIsBoundary && targetIsBoundary) {
+        // Edge between two boundary nodes, may not be a valid scenario
+        continue;
+      }
+
+      if (sourceIsBoundary || targetIsBoundary) {
+        Spider boundaryNode = sourceIsBoundary ? source : target;
+        Spider otherNode = sourceIsBoundary ? target : source;
+        String boundaryLabel = "+" + boundaryNode.getLabel();
+
+        if (edge.getType() == EdgeType.HADAMARD) {
+          String intermediateLink = "+L" + linkCounter.incrementAndGet();
+          spiderToLinks.get(otherNode).add(intermediateLink);
+          components.add(String.format("h{e^i(180), %s, %s}", intermediateLink, boundaryLabel));
+        } else { // NORMAL Edge
+          spiderToLinks.get(otherNode).add(boundaryLabel);
+        }
+      } else { // Edge between two non-boundary spiders
+        String linkName = "+L" + linkCounter.incrementAndGet();
+        if (edge.getType() == EdgeType.HADAMARD) {
+          String link1 = linkName + "a";
+          String link2 = linkName + "b";
+          spiderToLinks.get(source).add(link1);
+          spiderToLinks.get(target).add(link2);
+          components.add(String.format("h{e^i(180), %s, %s}", link1, link2));
+        } else {
+          spiderToLinks.get(source).add(linkName);
+          spiderToLinks.get(target).add(linkName);
+        }
       }
     }
 
     for (Spider spider : this.spiders) {
+      if (spider.getType() == SpiderType.BOUNDARY)
+        continue;
       String color = (spider.getType() == SpiderType.Z) ? "+1" : "-1";
       String phase = spider.getPhase();
       String links = String.join(", ", spiderToLinks.get(spider));
       components.add(String.format("{c(%s), e^i(%s), %s}", color, phase, links));
     }
-    if (components.size() > 2 && components.get(components.size() - 1).endsWith(",")) {
-      components.remove(components.size() - 1);
-    }
+
     return String.join(",\n", components);
   }
 }

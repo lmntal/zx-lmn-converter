@@ -29,6 +29,8 @@ public class DrawingPanel extends JPanel {
   private static final Stroke NORMAL_EDGE_STROKE = new BasicStroke(2f);
   private static final Stroke HADAMARD_EDGE_STROKE = new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
       10.0f, new float[] { 5.0f }, 0.0f);
+  private static final Stroke BOUNDARY_SPIDER_STROKE = new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+      10.0f, new float[] { 3.0f }, 0.0f);
   private static final Color HADAMARD_EDGE_COLOR = Color.BLUE;
 
   private ZXGraph graph;
@@ -75,6 +77,21 @@ public class DrawingPanel extends JPanel {
     int r = SPIDER_RADIUS;
     int x = spider.getX() - r;
     int y = spider.getY() - r;
+
+    if (spider.getType() == SpiderType.BOUNDARY) {
+      g2d.setColor(Color.BLACK);
+      g2d.setStroke(BOUNDARY_SPIDER_STROKE);
+      g2d.draw(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
+      if (spider.getLabel() != null && !spider.getLabel().isEmpty()) {
+        g2d.setColor(Color.BLACK);
+        g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        FontMetrics fm = g2d.getFontMetrics();
+        int stringWidth = fm.stringWidth(spider.getLabel());
+        g2d.drawString(spider.getLabel(), spider.getX() - stringWidth / 2, spider.getY() + fm.getAscent() / 2);
+      }
+      return;
+    }
+
     g2d.setColor(spider.getType() == SpiderType.Z ? Z_SPIDER_COLOR : X_SPIDER_COLOR);
     g2d.fill(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
     g2d.setColor(Color.BLACK);

@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
@@ -13,6 +15,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.kayo.zx.model.NamedGraph;
 import com.kayo.zx.model.RuleType;
+import com.kayo.zx.model.Spider;
+import com.kayo.zx.model.SpiderType;
 import com.kayo.zx.model.ZXGraph;
 import com.kayo.zx.model.ZXRule;
 import com.kayo.zx.view.AppToolbar;
@@ -64,9 +68,9 @@ public class AppController {
     editorPanel.getGraphEditorPanel().setGraph(currentGraphInEditor);
     editorPanel.getRuleEditorPanel().setRule(currentRuleInEditor);
 
-    DiagramController graphCtrl = new DiagramController(editorPanel.getGraphEditorPanel());
-    DiagramController lhsCtrl = new DiagramController(editorPanel.getRuleEditorPanel().getLhsPanel());
-    DiagramController rhsCtrl = new DiagramController(editorPanel.getRuleEditorPanel().getRhsPanel());
+    DiagramController graphCtrl = new DiagramController(editorPanel.getGraphEditorPanel(), false);
+    DiagramController lhsCtrl = new DiagramController(editorPanel.getRuleEditorPanel().getLhsPanel(), true);
+    DiagramController rhsCtrl = new DiagramController(editorPanel.getRuleEditorPanel().getRhsPanel(), true);
 
     editorPanel.getGraphEditorPanel().setController(graphCtrl);
     editorPanel.getRuleEditorPanel().getLhsPanel().setController(lhsCtrl);
@@ -89,7 +93,7 @@ public class AppController {
   public void selectGraph(NamedGraph graphToSelect) {
     if (graphToSelect == null || graphToSelect.equals(currentGraphInEditor))
       return;
-    if (!checkForUnsavedChanges()) {
+    if (!checkForAllUnsavedChanges()) {
       sidebarPanel.getGraphList().setSelectedValue(currentGraphInEditor, true);
       return;
     }
@@ -104,7 +108,7 @@ public class AppController {
   public void selectRule(ZXRule ruleToSelect) {
     if (ruleToSelect == null || ruleToSelect.equals(currentRuleInEditor))
       return;
-    if (!checkForUnsavedChanges()) {
+    if (!checkForAllUnsavedChanges()) {
       sidebarPanel.getRuleList().setSelectedValue(currentRuleInEditor, true);
       return;
     }
@@ -116,29 +120,44 @@ public class AppController {
     editorPanel.getRuleEditorPanel().repaint();
   }
 
-  private boolean checkForUnsavedChanges() {
+  private boolean checkForUnsavedGraphChanges() {
     ZXGraph currentGraphFromPanel = editorPanel.getGraphEditorPanel().getGraph();
+    boolean graphChanged = !currentGraphFromPanel.isIdenticalTo(savedGraphState);
+    if (graphChanged) {
+      int result = showUnsavedDialog("Graph '" + savedGraphState.getName() + "'");
+      if (result == JOptionPane.YES_OPTION) {
+        convertAndSaveCurrentGraph();
+      } else if (result == JOptionPane.CANCEL_OPTION) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean checkForUnsavedRuleChanges() {
     ZXRule currentRuleFromPanel = new ZXRule(currentRuleInEditor.getName());
     currentRuleFromPanel.getLhs().setData(editorPanel.getRuleEditorPanel().getLhsPanel().getGraph());
     currentRuleFromPanel.getRhs().setData(editorPanel.getRuleEditorPanel().getRhsPanel().getGraph());
     currentRuleFromPanel.setType((RuleType) editorPanel.getRuleEditorPanel().getRuleTypeSelector().getSelectedItem());
-
-    boolean graphChanged = !currentGraphFromPanel.isIdenticalTo(savedGraphState);
     boolean ruleChanged = !currentRuleFromPanel.isIdenticalTo(savedRuleState);
 
-    if (graphChanged) {
-      int result = showUnsavedDialog("Graph '" + savedGraphState.getName() + "'");
-      if (result == JOptionPane.YES_OPTION)
-        convertAndSaveCurrentGraph();
-      else if (result == JOptionPane.CANCEL_OPTION)
-        return false;
-    }
     if (ruleChanged) {
       int result = showUnsavedDialog("Rule '" + savedRuleState.getName() + "'");
-      if (result == JOptionPane.YES_OPTION)
+      if (result == JOptionPane.YES_OPTION) {
         convertAndSaveCurrentRule();
-      else if (result == JOptionPane.CANCEL_OPTION)
+      } else if (result == JOptionPane.CANCEL_OPTION) {
         return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean checkForAllUnsavedChanges() {
+    if (!checkForUnsavedGraphChanges()) {
+      return false;
+    }
+    if (!checkForUnsavedRuleChanges()) {
+      return false;
     }
     return true;
   }
@@ -150,7 +169,7 @@ public class AppController {
   }
 
   public void createNewGraph() {
-    if (!checkForUnsavedChanges())
+    if (!checkForUnsavedGraphChanges())
       return;
     String name = JOptionPane.showInputDialog(mainFrame, "Enter new graph name:", "graph_" + (graphs.size() + 1));
     if (name != null && !name.trim().isEmpty()) {
@@ -162,7 +181,7 @@ public class AppController {
   }
 
   public void createNewRule() {
-    if (!checkForUnsavedChanges())
+    if (!checkForUnsavedRuleChanges())
       return;
     String name = JOptionPane.showInputDialog(mainFrame, "Enter new rule name:", "rule_" + (rules.size() + 1));
     if (name != null && !name.trim().isEmpty()) {
@@ -220,6 +239,22 @@ public class AppController {
 
   public void convertAndSaveCurrentRule() {
     if (currentRuleInEditor != null) {
+      // Validation for boundary nodes
+      Set<String> lhsBoundaryLabels = currentRuleInEditor.getLhs().getSpiders().stream()
+          .filter(s -> s.getType() == SpiderType.BOUNDARY)
+          .map(Spider::getLabel)
+          .collect(Collectors.toSet());
+      Set<String> rhsBoundaryLabels = currentRuleInEditor.getRhs().getSpiders().stream()
+          .filter(s -> s.getType() == SpiderType.BOUNDARY)
+          .map(Spider::getLabel)
+          .collect(Collectors.toSet());
+
+      if (!lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
+        JOptionPane.showMessageDialog(mainFrame, "Boundary node labels must match on both sides of the rule.",
+            "Rule Error", JOptionPane.ERROR_MESSAGE);
+        return;
+      }
+
       currentRuleInEditor.setType((RuleType) editorPanel.getRuleEditorPanel().getRuleTypeSelector().getSelectedItem());
       savedRuleState.setData(currentRuleInEditor);
       outputPanel.getRuleOutputArea().setText(currentRuleInEditor.toLMNtal());
@@ -246,7 +281,7 @@ public class AppController {
   }
 
   public void exportToFile() {
-    if (!checkForUnsavedChanges())
+    if (!checkForAllUnsavedChanges())
       return;
 
     JFileChooser fileChooser = new JFileChooser();
@@ -259,21 +294,52 @@ public class AppController {
         fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".lmn");
       }
 
-      try (FileWriter writer = new FileWriter(fileToSave)) {
-        writer.write("// === Graph Definitions ===\n\n");
-        for (NamedGraph graph : graphs) {
-          if (!graph.isEmpty()) {
-            writer.write(String.format("// %s\n%s.\n\n", graph.getName(), graph.toLMNtal()));
-          }
+      StringBuilder exportContent = new StringBuilder();
+      StringBuilder errorMessages = new StringBuilder();
+
+      exportContent.append("// === Graph Definitions ===\n\n");
+      for (NamedGraph graph : graphs) {
+        if (!graph.isEmpty()) {
+          exportContent.append(String.format("// %s\n%s.\n\n", graph.getName(), graph.toLMNtal()));
+        }
+      }
+
+      exportContent.append("// === Rule Definitions ===\n\n");
+      for (ZXRule rule : rules) {
+        if (rule.isEmpty()) {
+          continue;
         }
 
-        writer.write("// === Rule Definitions ===\n\n");
-        for (ZXRule rule : rules) {
-          if (!rule.isEmpty()) {
-            writer.write(String.format("%s\n\n", rule.toLMNtal()));
-          }
+        // Validation for boundary nodes
+        Set<String> lhsBoundaryLabels = rule.getLhs().getSpiders().stream()
+            .filter(s -> s.getType() == SpiderType.BOUNDARY)
+            .map(Spider::getLabel)
+            .collect(Collectors.toSet());
+        Set<String> rhsBoundaryLabels = rule.getRhs().getSpiders().stream()
+            .filter(s -> s.getType() == SpiderType.BOUNDARY)
+            .map(Spider::getLabel)
+            .collect(Collectors.toSet());
+
+        if (lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
+          exportContent.append(String.format("%s\n\n", rule.toLMNtal()));
+        } else {
+          errorMessages.append("Rule '").append(rule.getName())
+              .append("' was not exported because its boundary node labels do not match.\n");
         }
-        JOptionPane.showMessageDialog(mainFrame, "File exported:\n" + fileToSave.getAbsolutePath());
+      }
+
+      try (FileWriter writer = new FileWriter(fileToSave)) {
+        writer.write(exportContent.toString());
+
+        String successMessage = "File exported:\n" + fileToSave.getAbsolutePath();
+        if (errorMessages.length() > 0) {
+          JOptionPane.showMessageDialog(mainFrame,
+              successMessage + "\n\nHowever, some rules could not be exported:\n" + errorMessages.toString(),
+              "Export Complete with Warnings", JOptionPane.WARNING_MESSAGE);
+        } else {
+          JOptionPane.showMessageDialog(mainFrame, successMessage);
+        }
+
       } catch (IOException e) {
         JOptionPane.showMessageDialog(mainFrame, "Error occurred during export: " + e.getMessage(), "Error",
             JOptionPane.ERROR_MESSAGE);
