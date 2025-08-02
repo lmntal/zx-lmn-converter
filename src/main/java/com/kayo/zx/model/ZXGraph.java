@@ -103,18 +103,29 @@ public class ZXGraph {
     do {
       boundaryCounter++;
       label = "b" + boundaryCounter;
-    } while (isLabelTaken(label));
+    } while (isLabelTaken(label, null));
     return label;
   }
 
   public String generateUniqueVariableLabel() {
-    return "v" + variableCounter.incrementAndGet();
+    Set<Integer> usedNumbers = this.spiders.stream()
+        .map(Spider::getVariableLabel)
+        .filter(label -> label != null && label.matches("v\\d+"))
+        .map(label -> Integer.valueOf(label.substring(1)))
+        .collect(Collectors.toSet());
+
+    int i = 1;
+    while (usedNumbers.contains(i)) {
+      i++;
+    }
+    return "v" + i;
   }
 
-  private boolean isLabelTaken(String label) {
+  public boolean isLabelTaken(String label, Spider spiderToIgnore) {
     return spiders.stream()
         .filter(s -> s.getType() == SpiderType.BOUNDARY)
-        .anyMatch(s -> label.equals(s.getLabel().toUpperCase()));
+        .filter(s -> !s.equals(spiderToIgnore))
+        .anyMatch(s -> label.equalsIgnoreCase(s.getLabel()));
   }
 
   public boolean isEmpty() {

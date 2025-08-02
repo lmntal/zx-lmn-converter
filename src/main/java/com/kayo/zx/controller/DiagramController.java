@@ -3,6 +3,12 @@ package com.kayo.zx.controller;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -27,12 +33,17 @@ public class DiagramController extends MouseAdapter {
   private Spider edgeStartSpider = null;
   private Point pressPoint = null;
   private Point currentMousePoint = null;
+  private ZXGraph otherGraph = null;
 
   public DiagramController(DrawingPanel panel, boolean isRuleEditorContext) {
     this.panel = panel;
     this.isRuleEditorContext = isRuleEditorContext;
     panel.addMouseListener(this);
     panel.addMouseMotionListener(this);
+  }
+
+  public void setOtherGraph(ZXGraph otherGraph) {
+    this.otherGraph = otherGraph;
   }
 
   @Override
@@ -150,8 +161,30 @@ public class DiagramController extends MouseAdapter {
     ZXGraph graph = panel.getGraph();
 
     if (spider.getType() == SpiderType.BOUNDARY) {
-      // No context menu for boundary nodes for now
-    } else {
+      if (isRuleEditorContext) {
+        JMenuItem editLabelItem = new JMenuItem("Edit Label");
+        editLabelItem.addActionListener(ev -> {
+          String currentLabel = spider.getLabel();
+          String newLabel = JOptionPane.showInputDialog(panel, "Enter new boundary label:", currentLabel);
+
+          if (newLabel != null && !newLabel.trim().isEmpty()) {
+            boolean isTakenInOwnGraph = graph.getSpiders().stream()
+                .filter(s -> s.getType() == SpiderType.BOUNDARY && !s.equals(spider))
+                .anyMatch(s -> newLabel.equalsIgnoreCase(s.getLabel()));
+            boolean isTakenInOtherGraph = (otherGraph != null && otherGraph.isLabelTaken(newLabel, null));
+
+            if (isTakenInOwnGraph || isTakenInOtherGraph) {
+              JOptionPane.showMessageDialog(panel, "Label '" + newLabel + "' is already in use.", "Error",
+                  JOptionPane.ERROR_MESSAGE);
+            } else {
+              spider.setLabel(newLabel);
+              panel.repaint();
+            }
+          }
+        });
+        menu.add(editLabelItem);
+      }
+    } else { // Z or X Spider
       if (isRuleEditorContext) {
         JMenuItem toggleUndefinedColorItem = new JMenuItem("Toggle Undefined Color");
         toggleUndefinedColorItem.addActionListener(ev -> {
@@ -170,14 +203,47 @@ public class DiagramController extends MouseAdapter {
         });
         menu.add(toggleUndefinedColorItem);
         menu.add(setUndefinedPhaseItem);
+
+        JMenuItem setVarLabelItem = new JMenuItem("Set Variable Label");
+        setVarLabelItem.addActionListener(ev -> {
+          if (!spider.isUndefined()) {
+            JOptionPane.showMessageDialog(panel, "Spider must be undefined (color or phase) to have a variable label.",
+                "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
+          }
+          Set<String> existingLabels = new HashSet<>();
+          if (otherGraph != null) {
+            existingLabels.addAll(getVariableLabelsFromGraph(otherGraph));
+          }
+          existingLabels.addAll(getVariableLabelsFromGraph(graph));
+
+          List<String> options = new ArrayList<>(existingLabels.stream().sorted().toList());
+          options.add(0, "New Variable");
+
+          String selected = (String) JOptionPane.showInputDialog(panel, "Choose a variable label:", "Set Variable",
+              JOptionPane.PLAIN_MESSAGE, null, options.toArray(),
+              spider.getVariableLabel() != null ? spider.getVariableLabel() : "New Variable");
+
+          if (selected != null) {
+            if ("New Variable".equals(selected)) {
+              spider.setVariableLabel(panel.getGraph().generateUniqueVariableLabel());
+            } else {
+              spider.setVariableLabel(selected);
+            }
+            panel.repaint();
+          }
+        });
+        menu.add(setVarLabelItem);
         menu.addSeparator();
       }
 
       JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
       toggleTypeItem.addActionListener(ev -> {
         spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
-        spider.setColorUndefined(false);
-        updateVariableLabel(spider);
+        if (spider.isColorUndefined()) {
+          spider.setColorUndefined(false);
+          updateVariableLabel(spider);
+        }
         panel.repaint();
       });
 
@@ -187,7 +253,9 @@ public class DiagramController extends MouseAdapter {
         String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", currentPhase);
         if (newPhase != null) {
           spider.setPhase(newPhase);
-          updateVariableLabel(spider);
+          if (newPhase.equals("?") && spider.isUndefined()) {
+            updateVariableLabel(spider);
+          }
           panel.repaint();
         }
       });
@@ -203,8 +271,16 @@ public class DiagramController extends MouseAdapter {
       }
     });
 
+    menu.addSeparator();
     menu.add(deleteItem);
     menu.show(panel, p.x, p.y);
+  }
+
+  private Set<String> getVariableLabelsFromGraph(ZXGraph graph) {
+    return graph.getSpiders().stream()
+        .map(Spider::getVariableLabel)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
   }
 
   private void updateVariableLabel(Spider spider) {
@@ -213,8 +289,7 @@ public class DiagramController extends MouseAdapter {
 
     if (spider.isUndefined()) {
       if (spider.getVariableLabel() == null || spider.getVariableLabel().isEmpty()) {
-        String label = panel.getGraph().generateUniqueVariableLabel();
-        spider.setVariableLabel(label);
+        spider.setVariableLabel(panel.getGraph().generateUniqueVariableLabel());
       }
     } else {
       spider.setVariableLabel(null);

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -156,10 +157,7 @@ public class AppController {
     if (!checkForUnsavedGraphChanges()) {
       return false;
     }
-    if (!checkForUnsavedRuleChanges()) {
-      return false;
-    }
-    return true;
+    return checkForUnsavedRuleChanges();
   }
 
   private int showUnsavedDialog(String itemName) {
@@ -237,25 +235,61 @@ public class AppController {
     }
   }
 
+  private boolean validateRule(ZXRule rule) {
+    // Boundary node validation
+    Set<String> lhsBoundaryLabels = rule.getLhs().getSpiders().stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY)
+        .map(Spider::getLabel)
+        .collect(Collectors.toSet());
+    Set<String> rhsBoundaryLabels = rule.getRhs().getSpiders().stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY)
+        .map(Spider::getLabel)
+        .collect(Collectors.toSet());
+
+    if (!lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
+      JOptionPane.showMessageDialog(mainFrame, "Boundary node labels must match on both sides of the rule.",
+          "Rule Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+
+    // Variable validation
+    Set<String> lhsVars = new HashSet<>();
+    rule.getLhs().toLMNtal(lhsVars);
+    Set<String> rhsVars = new HashSet<>();
+    rule.getRhs().toLMNtal(rhsVars);
+
+    Set<String> missingInLhs = new HashSet<>(rhsVars);
+    missingInLhs.removeAll(lhsVars);
+    if (!missingInLhs.isEmpty()) {
+      JOptionPane.showMessageDialog(mainFrame,
+          "Validation Error in rule '" + rule.getName() + "':\n" +
+              "The following variables from the RHS are missing in the LHS:\n" +
+              String.join(", ", missingInLhs),
+          "Rule Validation Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+
+    if (rule.getType() == RuleType.EQUALS) {
+      Set<String> missingInRhs = new HashSet<>(lhsVars);
+      missingInRhs.removeAll(rhsVars);
+      if (!missingInRhs.isEmpty()) {
+        JOptionPane.showMessageDialog(mainFrame,
+            "Validation Error in rule '" + rule.getName() + "' (reverse direction):\n" +
+                "The following variables from the RHS are missing in the LHS:\n" +
+                String.join(", ", missingInRhs),
+            "Rule Validation Error", JOptionPane.ERROR_MESSAGE);
+        return false;
+      }
+    }
+    return true;
+  }
+
   public void convertAndSaveCurrentRule() {
     if (currentRuleInEditor != null) {
-      // Validation for boundary nodes
-      Set<String> lhsBoundaryLabels = currentRuleInEditor.getLhs().getSpiders().stream()
-          .filter(s -> s.getType() == SpiderType.BOUNDARY)
-          .map(Spider::getLabel)
-          .collect(Collectors.toSet());
-      Set<String> rhsBoundaryLabels = currentRuleInEditor.getRhs().getSpiders().stream()
-          .filter(s -> s.getType() == SpiderType.BOUNDARY)
-          .map(Spider::getLabel)
-          .collect(Collectors.toSet());
-
-      if (!lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
-        JOptionPane.showMessageDialog(mainFrame, "Boundary node labels must match on both sides of the rule.",
-            "Rule Error", JOptionPane.ERROR_MESSAGE);
+      currentRuleInEditor.setType((RuleType) editorPanel.getRuleEditorPanel().getRuleTypeSelector().getSelectedItem());
+      if (!validateRule(currentRuleInEditor)) {
         return;
       }
-
-      currentRuleInEditor.setType((RuleType) editorPanel.getRuleEditorPanel().getRuleTypeSelector().getSelectedItem());
       savedRuleState.setData(currentRuleInEditor);
       outputPanel.getRuleOutputArea().setText(currentRuleInEditor.toLMNtal());
       outputPanel.getRuleOutputArea().setCaretPosition(0);
@@ -310,21 +344,11 @@ public class AppController {
           continue;
         }
 
-        // Validation for boundary nodes
-        Set<String> lhsBoundaryLabels = rule.getLhs().getSpiders().stream()
-            .filter(s -> s.getType() == SpiderType.BOUNDARY)
-            .map(Spider::getLabel)
-            .collect(Collectors.toSet());
-        Set<String> rhsBoundaryLabels = rule.getRhs().getSpiders().stream()
-            .filter(s -> s.getType() == SpiderType.BOUNDARY)
-            .map(Spider::getLabel)
-            .collect(Collectors.toSet());
-
-        if (lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
+        if (validateRule(rule)) {
           exportContent.append(String.format("%s\n\n", rule.toLMNtal()));
         } else {
           errorMessages.append("Rule '").append(rule.getName())
-              .append("' was not exported because its boundary node labels do not match.\n");
+              .append("' was not exported because it failed validation (boundary nodes or variables).\n");
         }
       }
 

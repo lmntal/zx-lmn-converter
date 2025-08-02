@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
 import com.kayo.zx.controller.AppController;
+import com.kayo.zx.controller.DiagramController;
 import com.kayo.zx.model.RuleType;
 import com.kayo.zx.model.ZXRule;
 
@@ -56,6 +57,15 @@ public class RuleEditorPanel extends JPanel {
     this.currentRule = rule;
     lhsPanel.setGraph(rule.getLhs());
     rhsPanel.setGraph(rule.getRhs());
+
+    // Pass reference of the other graph to the controllers
+    if (lhsPanel.getController() != null) {
+      ((DiagramController) lhsPanel.getController()).setOtherGraph(rhsPanel.getGraph());
+    }
+    if (rhsPanel.getController() != null) {
+      ((DiagramController) rhsPanel.getController()).setOtherGraph(lhsPanel.getGraph());
+    }
+
     ruleTypeSelector.setSelectedItem(rule.getType());
     lhsPanel.repaint();
     rhsPanel.repaint();
