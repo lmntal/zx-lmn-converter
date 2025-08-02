@@ -1,7 +1,12 @@
 package com.kayo.zx.model;
 
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public class ZXRule {
-  private String name;
+  private final String name;
   private final ZXGraph lhs = new ZXGraph();
   private final ZXGraph rhs = new ZXGraph();
   private RuleType type = RuleType.REWRITE;
@@ -21,9 +26,7 @@ public class ZXRule {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
+
 
   public ZXGraph getLhs() {
     return lhs;
@@ -51,31 +54,44 @@ public class ZXRule {
   }
 
   public boolean isIdenticalTo(ZXRule other) {
-    if (other == null)
-      return false;
-    return this.type == other.type &&
-        this.lhs.isIdenticalTo(other.lhs) &&
-        this.rhs.isIdenticalTo(other.rhs);
+    return Objects.equals(this.type, other != null ? other.type : null) &&
+        this.lhs.isIdenticalTo(other != null ? other.lhs : null) &&
+        this.rhs.isIdenticalTo(other != null ? other.rhs : null);
   }
 
   public String toLMNtal() {
-    StringBuilder sb = new StringBuilder();
-    String lhsStr = lhs.toLMNtal();
-    String rhsStr = rhs.toLMNtal();
+    Set<String> lhsVars = new HashSet<>();
+    Set<String> rhsVars = new HashSet<>();
 
-    sb.append(String.format("%s@@\n%s\n:-\n%s.", this.getName(), lhsStr, rhsStr));
+    String lhsStr = lhs.toLMNtal(lhsVars);
+    String rhsStr = rhs.toLMNtal(rhsVars);
+
+    Set<String> allVars = new HashSet<>();
+    allVars.addAll(lhsVars);
+    allVars.addAll(rhsVars);
+
+    StringBuilder sb = new StringBuilder(256);
+    String guard = "";
+    if (!allVars.isEmpty()) {
+      String varString = allVars.stream().sorted().collect(Collectors.joining("), int("));
+      guard = "int(" + varString + ") | ";
+    }
+
+    sb.append(String.format("%s@@\n%s\n:-\n%s%s.", this.getName(), lhsStr, guard, rhsStr));
 
     if (type == RuleType.EQUALS) {
       sb.append("\n\n");
-      sb.append(String.format("%s@@\n%s\n:-\n%s.", this.getName(), rhsStr, lhsStr));
+      sb.append(String.format("%s@@\n%s\n:-\n%s%s.", this.getName(), rhsStr, guard, lhsStr));
     }
     return sb.toString();
   }
 
   public final void setData(ZXRule other) {
+    if (other == null) {
+      throw new IllegalArgumentException("Other rule cannot be null");
+    }
     this.lhs.setData(other.lhs);
     this.rhs.setData(other.rhs);
     this.type = other.type;
-    this.name = other.name;
   }
 }

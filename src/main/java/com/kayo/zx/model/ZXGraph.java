@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,7 @@ public class ZXGraph {
   protected final List<Spider> spiders = new ArrayList<>();
   protected final List<Edge> edges = new ArrayList<>();
   private int boundaryCounter = 0;
+  final private AtomicInteger variableCounter = new AtomicInteger(0);
 
   public ZXGraph() {
   }
@@ -26,8 +28,6 @@ public class ZXGraph {
 
   public void addEdge(Edge edge) {
     if (edge.getSource().getType() == SpiderType.BOUNDARY && edge.getTarget().getType() == SpiderType.BOUNDARY) {
-      // This check is primarily handled in the controller for better user feedback,
-      // but can be a safeguard here as well.
       System.err.println("Attempted to connect two boundary spiders. Operation aborted in model.");
       return;
     }
@@ -73,6 +73,7 @@ public class ZXGraph {
     spiders.clear();
     edges.clear();
     boundaryCounter = 0;
+    variableCounter.set(0);
   }
 
   public final void setData(ZXGraph other) {
@@ -81,6 +82,7 @@ public class ZXGraph {
       return;
 
     this.boundaryCounter = other.boundaryCounter;
+    this.variableCounter.set(other.variableCounter.get());
     Map<Integer, Spider> oldIdToNewSpider = new HashMap<>();
     for (Spider oldSpider : other.getSpiders()) {
       Spider newSpider = new Spider(oldSpider);
@@ -100,15 +102,19 @@ public class ZXGraph {
     String label;
     do {
       boundaryCounter++;
-      label = "B" + boundaryCounter;
+      label = "b" + boundaryCounter;
     } while (isLabelTaken(label));
     return label;
+  }
+
+  public String generateUniqueVariableLabel() {
+    return "v" + variableCounter.incrementAndGet();
   }
 
   private boolean isLabelTaken(String label) {
     return spiders.stream()
         .filter(s -> s.getType() == SpiderType.BOUNDARY)
-        .anyMatch(s -> label.equals(s.getLabel()));
+        .anyMatch(s -> label.equals(s.getLabel().toUpperCase()));
   }
 
   public boolean isEmpty() {
@@ -135,6 +141,10 @@ public class ZXGraph {
   }
 
   public String toLMNtal() {
+    return toLMNtal(new java.util.HashSet<>());
+  }
+
+  public String toLMNtal(Set<String> variables) {
     if (isEmpty())
       return "";
 
@@ -161,7 +171,7 @@ public class ZXGraph {
       if (sourceIsBoundary || targetIsBoundary) {
         Spider boundaryNode = sourceIsBoundary ? source : target;
         Spider otherNode = sourceIsBoundary ? target : source;
-        String boundaryLabel = "+" + boundaryNode.getLabel();
+        String boundaryLabel = "+" + boundaryNode.getLabel().toUpperCase();
 
         if (edge.getType() == EdgeType.HADAMARD) {
           String intermediateLink = "+L" + linkCounter.incrementAndGet();
@@ -188,8 +198,33 @@ public class ZXGraph {
     for (Spider spider : this.spiders) {
       if (spider.getType() == SpiderType.BOUNDARY)
         continue;
-      String color = (spider.getType() == SpiderType.Z) ? "+1" : "-1";
-      String phase = spider.getPhase();
+      String color;
+      String phase;
+
+      if (spider.isUndefined()) {
+        String vLabel = spider.getVariableLabel();
+        if (vLabel == null || vLabel.trim().isEmpty()) {
+          // This should be prevented by the controller logic
+          continue;
+        }
+        if (spider.isColorUndefined()) {
+          color = "C" + vLabel;
+          variables.add(color);
+        } else {
+          color = (spider.getType() == SpiderType.Z) ? "+1" : "-1";
+        }
+
+        if (spider.isPhaseUndefined()) {
+          phase = "P" + vLabel;
+          variables.add(phase);
+        } else {
+          phase = spider.getPhase();
+        }
+      } else {
+        color = (spider.getType() == SpiderType.Z) ? "+1" : "-1";
+        phase = spider.getPhase();
+      }
+
       String links = String.join(", ", spiderToLinks.get(spider));
       components.add(String.format("{c(%s), e^i(%s), %s}", color, phase, links));
     }

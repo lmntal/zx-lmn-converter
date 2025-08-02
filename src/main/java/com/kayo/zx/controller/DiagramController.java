@@ -94,7 +94,6 @@ public class DiagramController extends MouseAdapter {
         }
       } else { // It's a drag
         if (edgeStartSpider != null && targetSpider != null && !targetSpider.equals(edgeStartSpider)) {
-          // Prohibit connecting two boundary spiders
           if (edgeStartSpider.getType() == SpiderType.BOUNDARY && targetSpider.getType() == SpiderType.BOUNDARY) {
             JOptionPane.showMessageDialog(panel, "Cannot connect two boundary spiders.", "Error",
                 JOptionPane.ERROR_MESSAGE);
@@ -113,7 +112,6 @@ public class DiagramController extends MouseAdapter {
   }
 
   private void addBoundarySpider(int x, int y) {
-    // Automatically generate a unique label for the boundary node
     String label = panel.getGraph().generateUniqueBoundaryLabel();
     Spider boundarySpider = new Spider(x, y, SpiderType.BOUNDARY);
     boundarySpider.setLabel(label);
@@ -152,21 +150,44 @@ public class DiagramController extends MouseAdapter {
     ZXGraph graph = panel.getGraph();
 
     if (spider.getType() == SpiderType.BOUNDARY) {
-      // Boundary nodes now have auto-generated labels, editing might not be desired.
-      // If editing is still needed, the logic to ensure uniqueness must be robust.
-      // For now, we disable direct editing to prefer auto-labels.
+      // No context menu for boundary nodes for now
     } else {
+      if (isRuleEditorContext) {
+        JMenuItem toggleUndefinedColorItem = new JMenuItem("Toggle Undefined Color");
+        toggleUndefinedColorItem.addActionListener(ev -> {
+          spider.setColorUndefined(!spider.isColorUndefined());
+          updateVariableLabel(spider);
+          panel.repaint();
+        });
+
+        JMenuItem setUndefinedPhaseItem = new JMenuItem("Set Phase Undefined (?)");
+        setUndefinedPhaseItem.addActionListener(ev -> {
+          if (!spider.isPhaseUndefined()) {
+            spider.setPhase("?");
+            updateVariableLabel(spider);
+            panel.repaint();
+          }
+        });
+        menu.add(toggleUndefinedColorItem);
+        menu.add(setUndefinedPhaseItem);
+        menu.addSeparator();
+      }
+
       JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
       toggleTypeItem.addActionListener(ev -> {
         spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
+        spider.setColorUndefined(false);
+        updateVariableLabel(spider);
         panel.repaint();
       });
 
       JMenuItem phaseItem = new JMenuItem("Edit Phase");
       phaseItem.addActionListener(ev -> {
-        String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", spider.getPhase());
+        String currentPhase = spider.isPhaseUndefined() ? "" : spider.getPhase();
+        String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", currentPhase);
         if (newPhase != null) {
           spider.setPhase(newPhase);
+          updateVariableLabel(spider);
           panel.repaint();
         }
       });
@@ -184,6 +205,20 @@ public class DiagramController extends MouseAdapter {
 
     menu.add(deleteItem);
     menu.show(panel, p.x, p.y);
+  }
+
+  private void updateVariableLabel(Spider spider) {
+    if (!isRuleEditorContext)
+      return;
+
+    if (spider.isUndefined()) {
+      if (spider.getVariableLabel() == null || spider.getVariableLabel().isEmpty()) {
+        String label = panel.getGraph().generateUniqueVariableLabel();
+        spider.setVariableLabel(label);
+      }
+    } else {
+      spider.setVariableLabel(null);
+    }
   }
 
   private void showEdgeContextMenu(Edge edge, Point p) {

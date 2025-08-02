@@ -9,7 +9,10 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
+import java.awt.TexturePaint;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
@@ -25,6 +28,7 @@ public class DrawingPanel extends JPanel {
   public static final int SPIDER_RADIUS = 15;
   private static final Color Z_SPIDER_COLOR = new Color(180, 255, 180);
   private static final Color X_SPIDER_COLOR = new Color(255, 180, 180);
+  private static final Color UNDEFINED_SPIDER_COLOR = Color.LIGHT_GRAY;
   private static final Color HADAMARD_GATE_COLOR = new Color(255, 255, 150);
   private static final Stroke NORMAL_EDGE_STROKE = new BasicStroke(2f);
   private static final Stroke HADAMARD_EDGE_STROKE = new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
@@ -32,15 +36,25 @@ public class DrawingPanel extends JPanel {
   private static final Stroke BOUNDARY_SPIDER_STROKE = new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
       10.0f, new float[] { 3.0f }, 0.0f);
   private static final Color HADAMARD_EDGE_COLOR = Color.BLUE;
-  private static final Color BOUNDARY_LABEL_COLOR = Color.BLUE;
+  private static final Color LABEL_COLOR = Color.BLUE.darker();
 
   private ZXGraph graph;
   private DiagramController controller;
+  private static TexturePaint hatchingPaint;
 
   public DrawingPanel() {
-    this.graph = new ZXGraph(); // Start with an empty, non-null graph
+    this.graph = new ZXGraph();
     setBackground(Color.WHITE);
     setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+    createHatchingPaint();
+  }
+
+  private static void createHatchingPaint() {
+    BufferedImage bi = new BufferedImage(5, 5, BufferedImage.TYPE_INT_ARGB);
+    Graphics2D g2d = bi.createGraphics();
+    g2d.setColor(Color.GRAY);
+    g2d.drawLine(0, 5, 5, 0);
+    hatchingPaint = new TexturePaint(bi, new Rectangle2D.Double(0, 0, 5, 5));
   }
 
   public void setController(DiagramController controller) {
@@ -84,25 +98,41 @@ public class DrawingPanel extends JPanel {
       g2d.setStroke(BOUNDARY_SPIDER_STROKE);
       g2d.draw(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
       if (spider.getLabel() != null && !spider.getLabel().isEmpty()) {
-        g2d.setColor(BOUNDARY_LABEL_COLOR);
-        g2d.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        // Display label at the top-right of the spider
-        g2d.drawString("<" + spider.getLabel() + ">", spider.getX() + r, spider.getY() - r);
+        g2d.setColor(LABEL_COLOR);
+        g2d.setFont(new Font("SansSerif", Font.ITALIC, 12));
+        g2d.drawString(spider.getLabel(), spider.getX() + r, spider.getY() + r + 5);
       }
       return;
     }
 
-    g2d.setColor(spider.getType() == SpiderType.Z ? Z_SPIDER_COLOR : X_SPIDER_COLOR);
-    g2d.fill(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
+    if (spider.isColorUndefined()) {
+      g2d.setColor(UNDEFINED_SPIDER_COLOR);
+      g2d.fill(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
+      g2d.setPaint(hatchingPaint);
+      g2d.fill(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
+      g2d.setPaint(null);
+    } else {
+      g2d.setColor(spider.getType() == SpiderType.Z ? Z_SPIDER_COLOR : X_SPIDER_COLOR);
+      g2d.fill(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
+    }
+
     g2d.setColor(Color.BLACK);
     g2d.setStroke(NORMAL_EDGE_STROKE);
     g2d.draw(new Ellipse2D.Double(x, y, 2 * r, 2 * r));
-    if (!"0".equals(spider.getPhase()) && spider.getPhase() != null && !spider.getPhase().isEmpty()) {
+
+    String phaseText = spider.getPhase();
+    if (!"0".equals(phaseText) && phaseText != null && !phaseText.isEmpty()) {
       g2d.setColor(Color.BLACK);
       g2d.setFont(new Font("SansSerif", Font.BOLD, 12));
       FontMetrics fm = g2d.getFontMetrics();
-      int stringWidth = fm.stringWidth(spider.getPhase());
-      g2d.drawString(spider.getPhase(), spider.getX() - stringWidth / 2, spider.getY() + fm.getAscent() / 2);
+      int stringWidth = fm.stringWidth(phaseText);
+      g2d.drawString(phaseText, spider.getX() - stringWidth / 2, spider.getY() + fm.getAscent() / 2);
+    }
+
+    if (spider.getVariableLabel() != null && !spider.getVariableLabel().isEmpty()) {
+      g2d.setColor(LABEL_COLOR);
+      g2d.setFont(new Font("SansSerif", Font.ITALIC, 12));
+      g2d.drawString(spider.getVariableLabel(), spider.getX() + r, spider.getY() + r + 5);
     }
   }
 

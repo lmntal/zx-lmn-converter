@@ -7,6 +7,8 @@ public class Spider extends GraphElement {
   private SpiderType type;
   private String phase = "0";
   private String label; // For BOUNDARY type
+  private String variableLabel; // For undefined spiders in rules
+  private boolean isColorUndefined = false;
 
   public Spider(int x, int y, SpiderType type) {
     super();
@@ -21,6 +23,16 @@ public class Spider extends GraphElement {
     this.type = other.type;
     this.phase = other.phase;
     this.label = other.label;
+    this.variableLabel = other.variableLabel;
+    this.isColorUndefined = other.isColorUndefined;
+  }
+
+  public boolean isPhaseUndefined() {
+    return "?".equals(phase);
+  }
+
+  public boolean isUndefined() {
+    return isColorUndefined() || isPhaseUndefined();
   }
 
   public int getX() {
@@ -70,5 +82,21 @@ public class Spider extends GraphElement {
 
   public void setLabel(String label) {
     this.label = label;
+  }
+
+  public String getVariableLabel() {
+    return variableLabel;
+  }
+
+  public void setVariableLabel(String variableLabel) {
+    this.variableLabel = variableLabel;
+  }
+
+  public boolean isColorUndefined() {
+    return isColorUndefined;
+  }
+
+  public void setColorUndefined(boolean isColorUndefined) {
+    this.isColorUndefined = isColorUndefined;
   }
 }
