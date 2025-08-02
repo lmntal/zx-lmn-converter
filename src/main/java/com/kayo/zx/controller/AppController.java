@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -236,15 +237,59 @@ public class AppController {
   }
 
   private boolean validateRule(ZXRule rule) {
+    // === START: New Validation Logic ===
+    // Validate uniqueness of variable labels within LHS and RHS
+    List<String> lhsVariableLabels = rule.getLhs().getSpiders().stream()
+        .map(Spider::getVariableLabel)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    if (new HashSet<>(lhsVariableLabels).size() < lhsVariableLabels.size()) {
+      JOptionPane.showMessageDialog(mainFrame, "Variable labels must be unique on the left side of the rule.",
+          "Rule Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+
+    List<String> rhsVariableLabels = rule.getRhs().getSpiders().stream()
+        .map(Spider::getVariableLabel)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    if (new HashSet<>(rhsVariableLabels).size() < rhsVariableLabels.size()) {
+      JOptionPane.showMessageDialog(mainFrame, "Variable labels must be unique on the right side of the rule.",
+          "Rule Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+
+    // Validate uniqueness of boundary labels within LHS and RHS
+    List<String> lhsBoundaryLabelList = rule.getLhs().getSpiders().stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY)
+        .map(Spider::getLabel)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    if (new HashSet<>(lhsBoundaryLabelList).size() < lhsBoundaryLabelList.size()) {
+      JOptionPane.showMessageDialog(mainFrame, "Boundary labels must be unique on the left side of the rule.",
+          "Rule Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+
+    List<String> rhsBoundaryLabelList = rule.getRhs().getSpiders().stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY)
+        .map(Spider::getLabel)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    if (new HashSet<>(rhsBoundaryLabelList).size() < rhsBoundaryLabelList.size()) {
+      JOptionPane.showMessageDialog(mainFrame, "Boundary labels must be unique on the right side of the rule.",
+          "Rule Error", JOptionPane.ERROR_MESSAGE);
+      return false;
+    }
+    // === END: New Validation Logic ===
+
     // Boundary node validation
-    Set<String> lhsBoundaryLabels = rule.getLhs().getSpiders().stream()
-        .filter(s -> s.getType() == SpiderType.BOUNDARY)
-        .map(Spider::getLabel)
-        .collect(Collectors.toSet());
-    Set<String> rhsBoundaryLabels = rule.getRhs().getSpiders().stream()
-        .filter(s -> s.getType() == SpiderType.BOUNDARY)
-        .map(Spider::getLabel)
-        .collect(Collectors.toSet());
+    Set<String> lhsBoundaryLabels = new HashSet<>(lhsBoundaryLabelList);
+    Set<String> rhsBoundaryLabels = new HashSet<>(rhsBoundaryLabelList);
 
     if (!lhsBoundaryLabels.equals(rhsBoundaryLabels)) {
       JOptionPane.showMessageDialog(mainFrame, "Boundary node labels must match on both sides of the rule.",

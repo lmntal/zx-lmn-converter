@@ -74,14 +74,14 @@ public class ZXRule {
     String guard = "";
     if (!allVars.isEmpty()) {
       String varString = allVars.stream().sorted().collect(Collectors.joining("), int("));
-      guard = "int(" + varString + ") | ";
+      guard = " int(" + varString + ") | ";
     }
 
-    sb.append(String.format("%s@@\n%s\n:-\n%s%s.", this.getName(), lhsStr, guard, rhsStr));
+    sb.append(String.format("%s@@\n%s\n:-%s\n%s.", this.getName(), lhsStr, guard, rhsStr));
 
     if (type == RuleType.EQUALS) {
       sb.append("\n\n");
-      sb.append(String.format("%s@@\n%s\n:-\n%s%s.", this.getName(), rhsStr, guard, lhsStr));
+      sb.append(String.format("%s@@\n%s\n:-%s\n%s.", this.getName(), rhsStr, guard, lhsStr));
     }
     return sb.toString();
   }

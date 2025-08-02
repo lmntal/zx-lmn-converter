@@ -99,12 +99,14 @@ public class ZXGraph {
   }
 
   public String generateUniqueBoundaryLabel() {
-    String label;
-    do {
-      boundaryCounter++;
-      label = "b" + boundaryCounter;
-    } while (isLabelTaken(label, null));
-    return label;
+    int i = 1;
+    while (true) {
+      String label = "b" + i;
+      if (!isLabelTaken(label, null)) {
+        return label;
+      }
+      i++;
+    }
   }
 
   public String generateUniqueVariableLabel() {
