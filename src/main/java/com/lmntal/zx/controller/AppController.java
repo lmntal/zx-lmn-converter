@@ -360,60 +360,65 @@ public class AppController {
   }
 
   public void exportToFile() {
-    if (!checkForAllUnsavedChanges())
-      return;
+    try {
+      if (!checkForAllUnsavedChanges())
+        return;
 
-    JFileChooser fileChooser = new JFileChooser();
-    fileChooser.setDialogTitle("Export as LMNtal file");
-    fileChooser.setFileFilter(new FileNameExtensionFilter("LMNtal files (*.lmn)", "lmn"));
+      JFileChooser fileChooser = new JFileChooser();
+      fileChooser.setDialogTitle("Export as LMNtal file");
+      fileChooser.setFileFilter(new FileNameExtensionFilter("LMNtal files (*.lmn)", "lmn"));
 
-    if (fileChooser.showSaveDialog(mainFrame) == JFileChooser.APPROVE_OPTION) {
-      File fileToSave = fileChooser.getSelectedFile();
-      if (!fileToSave.getName().toLowerCase().endsWith(".lmn")) {
-        fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".lmn");
-      }
-
-      StringBuilder exportContent = new StringBuilder();
-      StringBuilder errorMessages = new StringBuilder();
-
-      exportContent.append("// === Graph Definitions ===\n\n");
-      for (NamedGraph graph : graphs) {
-        if (!graph.isEmpty()) {
-          exportContent.append(String.format("// %s\n%s.\n\n", graph.getName(), graph.toLMNtal()));
-        }
-      }
-
-      exportContent.append("// === Rule Definitions ===\n\n");
-      for (ZXRule rule : rules) {
-        if (rule.isEmpty()) {
-          continue;
+      if (fileChooser.showSaveDialog(mainFrame) == JFileChooser.APPROVE_OPTION) {
+        File fileToSave = fileChooser.getSelectedFile();
+        if (!fileToSave.getName().toLowerCase().endsWith(".lmn")) {
+          fileToSave = new File(fileToSave.getParentFile(), fileToSave.getName() + ".lmn");
         }
 
-        if (validateRule(rule)) {
-          exportContent.append(String.format("%s\n\n", rule.toLMNtal()));
-        } else {
-          errorMessages.append("Rule '").append(rule.getName())
-              .append("' was not exported because it failed validation (boundary nodes or variables).\n");
-        }
-      }
+        StringBuilder exportContent = new StringBuilder();
+        StringBuilder errorMessages = new StringBuilder();
 
-      try (FileWriter writer = new FileWriter(fileToSave)) {
-        writer.write(exportContent.toString());
-
-        String successMessage = "File exported successfully:\n" + fileToSave.getAbsolutePath();
-        if (errorMessages.length() > 0) {
-          JOptionPane.showMessageDialog(mainFrame,
-              successMessage + "\n\nHowever, some rules could not be exported:\n" + errorMessages.toString(),
-              "Export Complete with Warnings", JOptionPane.WARNING_MESSAGE);
-        } else {
-          JOptionPane.showMessageDialog(mainFrame, successMessage, "Export Successful",
-              JOptionPane.INFORMATION_MESSAGE);
+        exportContent.append("// === Graph Definitions ===\n\n");
+        for (NamedGraph graph : graphs) {
+          if (!graph.isEmpty()) {
+            exportContent.append(String.format("// %s\n%s.\n\n", graph.getName(), graph.toLMNtal()));
+          }
         }
 
-      } catch (IOException e) {
-        JOptionPane.showMessageDialog(mainFrame, "Error occurred during export: " + e.getMessage(), "Export Error",
-            JOptionPane.ERROR_MESSAGE);
+        exportContent.append("// === Rule Definitions ===\n\n");
+        for (ZXRule rule : rules) {
+          if (rule.isEmpty()) {
+            continue;
+          }
+
+          if (validateRule(rule)) {
+            exportContent.append(String.format("%s\n\n", rule.toLMNtal()));
+          } else {
+            errorMessages.append("Rule '").append(rule.getName())
+                .append("' was not exported because it failed validation (boundary nodes or variables).\n");
+          }
+        }
+
+        try (FileWriter writer = new FileWriter(fileToSave)) {
+          writer.write(exportContent.toString());
+
+          String successMessage = "File exported successfully:\n" + fileToSave.getAbsolutePath();
+          if (errorMessages.length() > 0) {
+            JOptionPane.showMessageDialog(mainFrame,
+                successMessage + "\n\nHowever, some rules could not be exported:\n" + errorMessages.toString(),
+                "Export Complete with Warnings", JOptionPane.WARNING_MESSAGE);
+          } else {
+            JOptionPane.showMessageDialog(mainFrame, successMessage, "Export Successful",
+                JOptionPane.INFORMATION_MESSAGE);
+          }
+
+        } catch (IOException e) {
+          JOptionPane.showMessageDialog(mainFrame, "Error writing to file: " + e.getMessage(), "Export Error",
+              JOptionPane.ERROR_MESSAGE);
+        }
       }
+    } catch (Exception e) {
+      JOptionPane.showMessageDialog(mainFrame, "An unexpected error occurred during export: " + e.getMessage(),
+          "Error", JOptionPane.ERROR_MESSAGE);
     }
   }
 
