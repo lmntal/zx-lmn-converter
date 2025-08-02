@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 public class ZXGraph {
   protected final List<Spider> spiders = new ArrayList<>();
   protected final List<Edge> edges = new ArrayList<>();
+  private int boundaryCounter = 0;
 
   public ZXGraph() {
   }
@@ -24,6 +25,12 @@ public class ZXGraph {
   }
 
   public void addEdge(Edge edge) {
+    if (edge.getSource().getType() == SpiderType.BOUNDARY && edge.getTarget().getType() == SpiderType.BOUNDARY) {
+      // This check is primarily handled in the controller for better user feedback,
+      // but can be a safeguard here as well.
+      System.err.println("Attempted to connect two boundary spiders. Operation aborted in model.");
+      return;
+    }
     edges.add(edge);
   }
 
@@ -65,6 +72,7 @@ public class ZXGraph {
   public void clear() {
     spiders.clear();
     edges.clear();
+    boundaryCounter = 0;
   }
 
   public final void setData(ZXGraph other) {
@@ -72,6 +80,7 @@ public class ZXGraph {
     if (other == null)
       return;
 
+    this.boundaryCounter = other.boundaryCounter;
     Map<Integer, Spider> oldIdToNewSpider = new HashMap<>();
     for (Spider oldSpider : other.getSpiders()) {
       Spider newSpider = new Spider(oldSpider);
@@ -87,6 +96,21 @@ public class ZXGraph {
     }
   }
 
+  public String generateUniqueBoundaryLabel() {
+    String label;
+    do {
+      boundaryCounter++;
+      label = "B" + boundaryCounter;
+    } while (isLabelTaken(label));
+    return label;
+  }
+
+  private boolean isLabelTaken(String label) {
+    return spiders.stream()
+        .filter(s -> s.getType() == SpiderType.BOUNDARY)
+        .anyMatch(s -> label.equals(s.getLabel()));
+  }
+
   public boolean isEmpty() {
     return spiders.isEmpty() && edges.isEmpty();
   }
@@ -97,12 +121,6 @@ public class ZXGraph {
     if (this.spiders.size() != other.spiders.size() || this.edges.size() != other.edges.size()) {
       return false;
     }
-
-    // This is a simplification. A more robust check would involve graph
-    // isomorphism.
-    // For now, we rely on the LMNtal string representation, which is sensitive to
-    // ordering.
-    // A better check for boundary spiders is needed.
     Map<String, Long> thisBoundaryCounts = this.spiders.stream()
         .filter(s -> s.getType() == SpiderType.BOUNDARY && s.getLabel() != null)
         .collect(Collectors.groupingBy(Spider::getLabel, Collectors.counting()));
@@ -113,7 +131,6 @@ public class ZXGraph {
     if (!thisBoundaryCounts.equals(otherBoundaryCounts)) {
       return false;
     }
-
     return this.toLMNtal().equals(other.toLMNtal());
   }
 
@@ -138,7 +155,6 @@ public class ZXGraph {
       boolean targetIsBoundary = target.getType() == SpiderType.BOUNDARY;
 
       if (sourceIsBoundary && targetIsBoundary) {
-        // Edge between two boundary nodes, may not be a valid scenario
         continue;
       }
 

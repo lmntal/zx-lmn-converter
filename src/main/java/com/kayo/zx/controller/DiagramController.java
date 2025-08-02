@@ -94,7 +94,13 @@ public class DiagramController extends MouseAdapter {
         }
       } else { // It's a drag
         if (edgeStartSpider != null && targetSpider != null && !targetSpider.equals(edgeStartSpider)) {
-          graph.addEdge(new Edge(edgeStartSpider, targetSpider, currentEdgeType));
+          // Prohibit connecting two boundary spiders
+          if (edgeStartSpider.getType() == SpiderType.BOUNDARY && targetSpider.getType() == SpiderType.BOUNDARY) {
+            JOptionPane.showMessageDialog(panel, "Cannot connect two boundary spiders.", "Error",
+                JOptionPane.ERROR_MESSAGE);
+          } else {
+            graph.addEdge(new Edge(edgeStartSpider, targetSpider, currentEdgeType));
+          }
         }
       }
     }
@@ -107,21 +113,11 @@ public class DiagramController extends MouseAdapter {
   }
 
   private void addBoundarySpider(int x, int y) {
-    String label = JOptionPane.showInputDialog(panel, "Enter label for boundary node:");
-    if (label != null && !label.trim().isEmpty()) {
-      boolean isUnique = panel.getGraph().getSpiders().stream()
-          .filter(s -> s.getType() == SpiderType.BOUNDARY)
-          .noneMatch(s -> label.equals(s.getLabel()));
-
-      if (isUnique) {
-        Spider boundarySpider = new Spider(x, y, SpiderType.BOUNDARY);
-        boundarySpider.setLabel(label);
-        panel.getGraph().addSpider(boundarySpider);
-      } else {
-        JOptionPane.showMessageDialog(panel, "Boundary node label must be unique within the graph.", "Error",
-            JOptionPane.ERROR_MESSAGE);
-      }
-    }
+    // Automatically generate a unique label for the boundary node
+    String label = panel.getGraph().generateUniqueBoundaryLabel();
+    Spider boundarySpider = new Spider(x, y, SpiderType.BOUNDARY);
+    boundarySpider.setLabel(label);
+    panel.getGraph().addSpider(boundarySpider);
   }
 
   @Override
@@ -156,22 +152,9 @@ public class DiagramController extends MouseAdapter {
     ZXGraph graph = panel.getGraph();
 
     if (spider.getType() == SpiderType.BOUNDARY) {
-      JMenuItem editLabelItem = new JMenuItem("Edit Label");
-      editLabelItem.addActionListener(ev -> {
-        String newLabel = JOptionPane.showInputDialog(panel, "Enter new label:", spider.getLabel());
-        if (newLabel != null && !newLabel.trim().isEmpty()) {
-          boolean isUnique = panel.getGraph().getSpiders().stream()
-              .filter(s -> s.getType() == SpiderType.BOUNDARY && !s.equals(spider))
-              .noneMatch(s -> newLabel.equals(s.getLabel()));
-          if (isUnique) {
-            spider.setLabel(newLabel);
-            panel.repaint();
-          } else {
-            JOptionPane.showMessageDialog(panel, "Label must be unique.", "Error", JOptionPane.ERROR_MESSAGE);
-          }
-        }
-      });
-      menu.add(editLabelItem);
+      // Boundary nodes now have auto-generated labels, editing might not be desired.
+      // If editing is still needed, the logic to ensure uniqueness must be robust.
+      // For now, we disable direct editing to prefer auto-labels.
     } else {
       JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
       toggleTypeItem.addActionListener(ev -> {
