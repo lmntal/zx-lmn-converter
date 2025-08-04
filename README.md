@@ -86,5 +86,4 @@ This is a research tool for ZX-calculus to LMNtal conversion. Current features i
 - ✅ Import .lmn files
 
 Planned features:
-- 🔄 Bidirectional rule import
 - 🔄 Advanced pattern matching for QLMNtal
