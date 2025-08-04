@@ -192,34 +192,33 @@ public class DiagramController extends MouseAdapter {
         menu.add(editLabelItem);
       }
     } else { // Z or X Spider
-      if (isRuleEditorContext) {
-        JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
-        toggleTypeItem.addActionListener(ev -> {
-          spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
-          if (spider.isColorUndefined()) {
-            spider.setColorUndefined(false);
+      JMenuItem toggleTypeItem = new JMenuItem("Toggle Spider Type (Z/X)");
+      toggleTypeItem.addActionListener(ev -> {
+        spider.setType(spider.getType() == SpiderType.Z ? SpiderType.X : SpiderType.Z);
+        if (spider.isColorUndefined()) {
+          spider.setColorUndefined(false);
+          updateVariableLabel(spider);
+        }
+        panel.repaint();
+      });
+
+      JMenuItem phaseItem = new JMenuItem("Edit Phase");
+      phaseItem.addActionListener(ev -> {
+        String currentPhase = spider.isPhaseUndefined() ? "" : spider.getPhase();
+        String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", currentPhase);
+        if (newPhase != null) {
+          spider.setPhase(newPhase);
+          if (newPhase.equals("?") && spider.isUndefined()) {
             updateVariableLabel(spider);
           }
           panel.repaint();
-        });
+        }
+      });
+      menu.add(toggleTypeItem);
+      menu.add(phaseItem);
 
-        JMenuItem phaseItem = new JMenuItem("Edit Phase");
-        phaseItem.addActionListener(ev -> {
-          String currentPhase = spider.isPhaseUndefined() ? "" : spider.getPhase();
-          String newPhase = JOptionPane.showInputDialog(panel, "Enter new phase:", currentPhase);
-          if (newPhase != null) {
-            spider.setPhase(newPhase);
-            if (newPhase.equals("?") && spider.isUndefined()) {
-              updateVariableLabel(spider);
-            }
-            panel.repaint();
-          }
-        });
-        menu.add(toggleTypeItem);
-        menu.add(phaseItem);
-
-        menu.addSeparator();
-
+      menu.addSeparator();
+      if (isRuleEditorContext) {
         JMenuItem toggleUndefinedColorItem = new JMenuItem("Toggle Undefined Color");
         toggleUndefinedColorItem.addActionListener(ev -> {
           spider.setColorUndefined(!spider.isColorUndefined());
@@ -268,6 +267,7 @@ public class DiagramController extends MouseAdapter {
           }
         });
         menu.add(setVarLabelItem);
+        menu.addSeparator();
       }
     }
 
@@ -279,7 +279,6 @@ public class DiagramController extends MouseAdapter {
       }
     });
 
-    menu.addSeparator();
     menu.add(deleteItem);
     menu.show(panel, p.x, p.y);
   }
