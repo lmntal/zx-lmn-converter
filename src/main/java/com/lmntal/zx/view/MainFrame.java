@@ -36,9 +36,15 @@ public class MainFrame extends JFrame {
     add(mainSplit, BorderLayout.CENTER);
 
     JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+    JButton importButton = new JButton("Import from File (.lmn)");
+    importButton.addActionListener(e -> controller.importFromFile());
+    bottomPanel.add(importButton);
+
     JButton exportButton = new JButton("Export to File (.lmn)");
     exportButton.addActionListener(e -> controller.exportToFile());
     bottomPanel.add(exportButton);
+
     add(bottomPanel, BorderLayout.SOUTH);
   }
 }

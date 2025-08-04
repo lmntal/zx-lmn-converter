@@ -83,7 +83,8 @@ This is a research tool for ZX-calculus to LMNtal conversion. Current features i
 - ✅ File export functionality
 - ✅ Undefined variables in rules
 - ✅ Boundary node support
+- ✅ Import .lmn files
 
 Planned features:
-- 🔄 Import .lmn files
-- 🔄 Advanced pattern matching
+- 🔄 Bidirectional rule import
+- 🔄 Advanced pattern matching for QLMNtal

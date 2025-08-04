@@ -15,6 +15,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.lmntal.zx.importer.LMNtalImporter;
 import com.lmntal.zx.model.NamedGraph;
 import com.lmntal.zx.model.RuleType;
 import com.lmntal.zx.model.Spider;
@@ -419,6 +420,71 @@ public class AppController {
     } catch (Exception e) {
       JOptionPane.showMessageDialog(mainFrame, "An unexpected error occurred during export: " + e.getMessage(),
           "Error", JOptionPane.ERROR_MESSAGE);
+    }
+  }
+
+  public void importFromFile() {
+    if (!checkForAllUnsavedChanges()) {
+      return;
+    }
+    JFileChooser fileChooser = new JFileChooser();
+    fileChooser.setDialogTitle("Import LMNtal file");
+    fileChooser.setFileFilter(new FileNameExtensionFilter("LMNtal files (*.lmn)", "lmn"));
+    if (fileChooser.showOpenDialog(mainFrame) == JFileChooser.APPROVE_OPTION) {
+      try {
+        LMNtalImporter importer = new LMNtalImporter();
+        importer.importFile(fileChooser.getSelectedFile().toPath());
+
+        List<NamedGraph> importedGraphs = importer.getGraphs();
+        List<ZXRule> importedRules = importer.getRules();
+        List<String> errors = importer.getErrorMessages();
+
+        if (!errors.isEmpty()) {
+          String errorMsg = "Encountered errors during import:\n" + String.join("\n", errors);
+          JOptionPane.showMessageDialog(mainFrame, errorMsg, "Import Warning", JOptionPane.WARNING_MESSAGE);
+        }
+
+        if (importedGraphs.isEmpty() && importedRules.isEmpty()) {
+          JOptionPane.showMessageDialog(mainFrame, "No valid graphs or rules found in the file.", "Import Info",
+              JOptionPane.INFORMATION_MESSAGE);
+          return;
+        }
+
+        // Clear existing items and update models
+        graphs.clear();
+        rules.clear();
+        graphListModel.clear();
+        ruleListModel.clear();
+
+        importedGraphs.forEach(g -> {
+          graphs.add(g);
+          graphListModel.addElement(g);
+        });
+        importedRules.forEach(r -> {
+          rules.add(r);
+          ruleListModel.addElement(r);
+        });
+
+        // Select the first imported item if available
+        if (!graphs.isEmpty()) {
+          sidebarPanel.getGraphList().setSelectedIndex(0);
+        } else if (!rules.isEmpty()) {
+          sidebarPanel.getRuleList().setSelectedIndex(0);
+        } else {
+          // Create new empty graph/rule if import was empty but successful
+          createNewGraph();
+          createNewRule();
+        }
+        JOptionPane.showMessageDialog(mainFrame, "Import successful!", "Import Complete",
+            JOptionPane.INFORMATION_MESSAGE);
+
+      } catch (IOException e) {
+        JOptionPane.showMessageDialog(mainFrame, "Error reading file: " + e.getMessage(), "Import Error",
+            JOptionPane.ERROR_MESSAGE);
+      } catch (Exception e) {
+        JOptionPane.showMessageDialog(mainFrame, "An unexpected error occurred during import: " + e.getMessage(),
+            "Error", JOptionPane.ERROR_MESSAGE);
+      }
     }
   }
 
