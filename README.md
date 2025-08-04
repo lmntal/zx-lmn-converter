@@ -2,7 +2,7 @@
 
 A Java Swing tool for creating ZX-calculus diagrams and rules and converting them to LMNtal code.
 
-![example](zx<->lmn.png)
+![example](image.png)
 
 ## Requirements
 
@@ -57,6 +57,7 @@ mvn compile exec:java
 ### File Operations
 - **New Graph/Rule**: Create additional diagrams
 - **Export**: Save all graphs and rules to .lmn file
+- **Inport**: Import .lmn files and edit
 - **Convert/Save**: Generate LMNtal code for current item
 
 ## LMNtal Output Format
